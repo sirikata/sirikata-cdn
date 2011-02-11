@@ -1,0 +1,6 @@
+[submodule "externals/django-cassandra-backend"]
+	path = externals/django-cassandra-backend
+	url = git://github.com/vaterlaus/django_cassandra_backend.git
+[submodule "externals/django-oauth-access"]
+	path = externals/django-oauth-access
+	url = git://github.com/eldarion/django-oauth-access.git
