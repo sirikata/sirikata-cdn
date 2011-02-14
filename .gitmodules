@@ -1,3 +1,6 @@
 [submodule "externals/django-oauth-access"]
 	path = externals/django-oauth-access
 	url = git://github.com/eldarion/django-oauth-access.git
+[submodule "externals/pycassa"]
+	path = externals/pycassa
+	url = git://github.com/pycassa/pycassa.git
