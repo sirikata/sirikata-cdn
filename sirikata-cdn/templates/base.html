@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html> 
+
+<head>
+    <title>{% block title %}Sirikata CDN{% endblock title %}</title>
+    {% block css_includes %}
+    <link rel="stylesheet" href="{{ MEDIA_URL }}main.css" type="text/css" media="all" />
+    {% endblock css_includes %}
+</head>
+
+<body>
+
+<div id="home">
+
+<div id="header"><h1>Sirikata CDN Website</h1></div>
+
+<div id="navbar">
+<div id="navigation">
+<ul id="menu_list">
+<li><a href="/">Home</a></li>
+<li><a href="/upload/">Upload</a>
+<li><a href="/content/">Browse</a>
+<li><a href="/search/">Search</a>
+</ul>
+</div>
+<div id="useractions">
+<ul id="useractionlist">
+<li>{{ user.username|default:'<a href="/login/">Login</a>'}}</li>
+</ul>
+</div>
+</div>
+
+<div id="content_wrapper">
+<div id="content">
+{% block main_content %}
+Welcome to the Sirikata CDN website!
+{% endblock main_content %}
+</div>
+</div>
+
+<div id="footer">
+<h3>&copy; 2011 Sirikata CDN</h3>
+</div>
+
+</div>
+
+</body>
+
+</html>
+

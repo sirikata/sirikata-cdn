@@ -1,0 +1,85 @@
+div#home {
+    margin: 0 30px;
+    background: #ffffff;
+    font-family: Lucida Grande, Lucida Sans, Arial, sans-serif;
+}
+
+div#header {
+    background: #deedf7;
+    width: 100%;
+    border: 1px solid #aed0ea;
+    margin: 0;
+}
+div#header h1 {
+	margin: 0;
+	padding: 20px;
+	color: #222222;
+}
+
+div#navbar {
+    float: left;
+    width: 100%;
+    background: #deedf7;
+    border-right: 1px solid #aed0ea;
+    border-left: 1px solid #aed0ea;
+    border-bottom: 1px solid #aed0ea;
+    padding: 0;
+    margin: 0;
+}
+
+div#useractions {
+	float: right;
+}
+
+div#navigation ul, div#useractions ul {
+    margin: 0;
+    padding: 0;
+}
+div#navigation ul li, div#useractions ul li {
+    list-style-type: none;
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+div#navigation li a, div#useractions li a {
+    display: block;
+    float: left;
+    padding: 5px 10px;
+    color: #222222;
+    text-decoration: none;
+    font-weight: bold;
+}
+div#navigation li a {
+    border-right: 1px solid #aed0ea;
+}
+div#navigation li a:hover, div#useractions li a:hover {
+	background: #e4f1fb;
+	text-decoration: underline;
+}
+
+div#content_wrapper {
+    clear: left;
+    width: 100%;
+    color: #362b36;
+    background: #f2f5f7;
+    border-right: 1px solid #dddddd;
+    border-left: 1px solid #dddddd;
+    border-bottom: 1px solid #999999;
+}
+div#content {
+	padding: 10px;
+}
+
+div#footer {
+    background: #cccccc;
+    text-align: right;
+    width: 100%;
+    border-right: 1px solid #999999;
+    border-left: 1px solid #999999;
+    border-bottom: 1px solid #999999;
+}
+div#footer h3 {
+    margin: 0;
+    padding: 10px;
+    color: #362b36;
+}

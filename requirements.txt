@@ -1,0 +1,7 @@
+pycassa
+   - Provided in externals/pycassa
+   - cd externals/pycassa; python setup.py install
+
+Thrift
+   - easy_install thrift05
+
