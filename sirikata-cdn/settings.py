@@ -2,15 +2,17 @@ import os
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
+# ========= THESE ARE ITEMS YOU MIGHT WANT TO CHANGE ============
 
+#Turn these off in production
+DEBUG = True
+TEMPLATE_DEBUG = True
+
+#Set to your time zone and language
 TIME_ZONE = 'America/New_York'
 LANGUAGE_CODE = 'en-us'
-SITE_ID = 1
-USE_I18N = True
-USE_L10N = True
 
+#Where media files are located
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
 MEDIA_URL = '/media/'
 
@@ -18,6 +20,27 @@ MEDIA_URL = '/media/'
 # Dummy Key. Do not use in production!
 # ============================
 SECRET_KEY = 'u$az#fnxh2rk=+-lwvjfbkmfxzwq5b8xwrn%y#$-vc9ibb$oxo'
+
+# ===============================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ====== PROBABLY DON'T NEED TO CHANGE ANYTHING BELOW ===========
+
+SITE_ID = 1
+USE_I18N = True
+USE_L10N = True
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',

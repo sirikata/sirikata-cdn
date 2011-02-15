@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ block.super }} | Login{% endblock title %}
+
+{% block css_includes %}
+{{ block.super }}
+<link type="text/css" rel="stylesheet" href="{{ MEDIA_URL }}css/openid.css" />
+{% endblock css_includes %}
+
+{% block js_includes %}
+{{ block.super }}
+<script type="text/javascript" src="{{ MEDIA_URL }}js/openid-jquery.js"></script> 
+<script type="text/javascript" src="{{ MEDIA_URL }}js/openid-en.js"></script>
+<script type="text/javascript"> 
+    $(document).ready(function() {
+        openid.init('openid_identifier');
+    });
+</script>
+{% endblock js_includes %} 
+
+{% block main_content %}
+{% if messages %}
+<ul id="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<form action="{% url users.views.openid_select %}" method="get" id="openid_form">
+    <input type="hidden" name="action" value="verify" />
+    <fieldset>
+        <legend>Sign-in or Create New Account</legend>
+        <div id="openid_choice">
+            <p>Please click your account provider:</p>
+            <div id="openid_btns"></div>
+        </div>
+        <div id="openid_input_area">
+            <input id="openid_identifier" name="openid_identifier" type="text" value="http://" />
+            <input id="openid_submit" type="submit" value="Sign-In"/>
+        </div>
+        <noscript>
+            <p>OpenID is service that allows you to log-on to many different websites using a single indentity.
+            Find out <a href="http://openid.net/what/">more about OpenID</a> and <a href="http://openid.net/get/">how to get an OpenID enabled account</a>.</p>
+        </noscript>
+    </fieldset>
+</form>
+{% endblock main_content %}

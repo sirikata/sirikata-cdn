@@ -4,8 +4,11 @@
 <head>
     <title>{% block title %}Sirikata CDN{% endblock title %}</title>
     {% block css_includes %}
-    <link rel="stylesheet" href="{{ MEDIA_URL }}main.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="{{ MEDIA_URL }}css/main.css" type="text/css" media="all" />
     {% endblock css_includes %}
+    {% block js_includes %}
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery-1.5.min.js"></script>
+    {% endblock js_includes %}
 </head>
 
 <body>
