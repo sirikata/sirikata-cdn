@@ -5,3 +5,5 @@ pycassa
 Thrift
    - easy_install thrift05
 
+python-openid
+   - cd externals/openid; python setup.py install

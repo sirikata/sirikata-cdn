@@ -14,17 +14,20 @@ Installation
        cd sirikata-cdn
        git submodule init
        git submodule update
-2. Next, set up Cassandra. See http://cassandra.apache.org/
-3. Make sure you have pycassa working:
+1. Next, set up Cassandra. See http://cassandra.apache.org/
+1. Make sure you have pycassa working:
        cd externals/pycassa
        python setup.py install
-4. Make sure you have thrift05 installed:
+1. Make sure you have python-openid working:
+       cd externals/openid
+       python setup.py install
+1. Make sure you have thrift05 installed:
        easy_install thrift05
-5. Edit sirikata-cdn/settings.py:
+1. Edit sirikata-cdn/settings.py:
     * SECRET_KEY: Randomly generate this. See Django docs for more info.
-6. Edit sirikata-cdn/cassandra_storage/settings.py:
+1. Edit sirikata-cdn/cassandra_storage/settings.py:
     * CASSANDRA_SERVER: The host and port of Cassandra
-7. Next, set up the CDN's Cassandra schema:
+1. Next, set up the CDN's Cassandra schema:
        cd sirikata-cdn
        python manage.py sync_cassandra
-8. Configure a web server. See Django docs for how to do this.
+1. Configure a web server. See Django docs for how to do this.

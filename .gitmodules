@@ -1,3 +1,6 @@
 [submodule "externals/pycassa"]
 	path = externals/pycassa
 	url = git://github.com/pycassa/pycassa.git
+[submodule "externals/openid"]
+	path = externals/openid
+	url = git://github.com/openid/python-openid.git
