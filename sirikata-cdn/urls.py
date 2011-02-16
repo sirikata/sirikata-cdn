@@ -5,7 +5,9 @@ urlpatterns = patterns('',
     (r'^upload/$', 'content.views.upload'),
     (r'^login/openid_select$', 'users.views.openid_select'),
     (r'^login/openid_return$', 'users.views.openid_return'),
+    (r'^login/openid_link$', 'users.views.openid_link'),
     (r'^login/$', 'users.views.login'),
+    (r'^logout/$', 'users.views.logout'),
     (r'^$', 'content.views.index'),
 )
 

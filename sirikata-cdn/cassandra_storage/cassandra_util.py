@@ -26,9 +26,9 @@ class InvalidRequestError(DatabaseError):
 def getColumnFamily(name):
     return pycassa.ColumnFamily(POOL, name)
 
-def getRecord(cf, rowkey):
+def getRecord(cf, rowkey, columns=None):
     try:
-        return cf.get(rowkey)
+        return cf.get(rowkey, columns=columns)
     except NotFoundException:
         raise NotFoundError('Record %s not found' % (rowkey,))
     except InvalidRequestException:
@@ -37,6 +37,21 @@ def getRecord(cf, rowkey):
         raise TimedOutError('Request for record %s timed out' % (rowkey,))
     except UnavailableException:
         raise UnavailableError('Record %s was unavailable' % (rowkey,))
+
+def getRecordsByIndex(cf, column, value, count=100, columns=None):
+    try:
+        expr = pycassa.index.create_index_expression(column, value)
+        clause = pycassa.index.create_index_clause([expr], count=count)
+        for key, user in cf.get_indexed_slices(clause, columns=columns):
+            yield key, user
+    except NotFoundException:
+        raise NotFoundError('Record not found')
+    except InvalidRequestException:
+        raise InvalidRequestError('Invalid request for record')
+    except TimedOutException:
+        raise TimedOutError('Request for record timed out')
+    except UnavailableException:
+        raise UnavailableError('Record was unavailable')
 
 def insertRecord(cf, rowkey, columns):
     try:

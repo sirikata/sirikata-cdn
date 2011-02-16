@@ -5,9 +5,14 @@
     <title>{% block title %}Sirikata CDN{% endblock title %}</title>
     {% block css_includes %}
     <link rel="stylesheet" href="{{ MEDIA_URL }}css/main.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="{{ MEDIA_URL }}css/cupertino/jquery-ui-1.8.9.custom.css" type="text/css" />
     {% endblock css_includes %}
     {% block js_includes %}
     <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery-1.5.min.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery-ui-1.8.9.custom.min.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/form-jquery-ui-styling.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery.metadata.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}js/jquery.validate.min.js"></script>
     {% endblock js_includes %}
 </head>
 
@@ -28,7 +33,12 @@
 </div>
 <div id="useractions">
 <ul id="useractionlist">
-<li>{{ user.username|default:'<a href="/login/">Login</a>'}}</li>
+{% if request.user.is_authenticated %}
+<li><span>{{ request.user.username }}</span></li>
+<li><a href="/logout/">Logout</a></li>
+{% else %}
+<li><a href="/login/">Login</a></li>
+{% endif %}
 </ul>
 </div>
 </div>

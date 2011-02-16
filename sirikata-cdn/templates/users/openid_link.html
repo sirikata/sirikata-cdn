@@ -2,6 +2,18 @@
 
 {% block title %}{{ block.super }} | Link OpenID Account{% endblock title %}
 
+{% block js_includes %}
+{{ block.super }}
+<script type="text/javascript"> 
+    $(document).ready(function() {
+        $("#openid_link").styleform();
+        $("#openid_link_form").validate({
+        	errorClass: "ui-state-error"
+        });
+    });
+</script>
+{% endblock js_includes %} 
+
 {% block main_content %}
 {% if messages %}
 <ul id="messages">
@@ -10,17 +22,33 @@
     {% endfor %}
 </ul>
 {% endif %}
-<div id="openid_identity">OpenID Identity: https://whatever</div>
-<form action="{% url users.views.openid_link_done %}" method="post" id="openid_link">
-    <fieldset>
-        <legend>Link your OpenID Account</legend>
-        <label for="desired_username">Username:</label>
-        <input id="desired_username" type="text" value=""/>
-        <label for="fullname">Name:</label>
-        <input id="fullname" type="text" value=""/>
-        <label for="email">Email:</label>
-        <input id="email" type="text" value=""/>
-        <input id="openid_link_submit" type="submit"/>
-    </fieldset>
-</form>
+
+<div id="openid_link">
+<fieldset id="openid_link_fieldset">
+    <legend id="openid_link_legend">Link your OpenID Account</legend>
+    <form action="{% url users.views.openid_link %}" method="post" id="openid_link_form">{% csrf_token %}
+    <ul>
+        <li><span class="form_message">You have successfully authenticated through OpenID.
+        You now need to link your OpenID account with some additional information.
+        Based on your OpenID information, the fields below have been pre-populated.</span></li>
+    
+        <li><label class="form_label">OpenID Identity:</label>
+        <span id="openid_identity" class="small form_element">{{ openid_identity }}</span></li>
+
+        {% for field in form %}
+            <li>
+            <label class="form_label" for='id_{{ field.name }}'>{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <label class='ui-state-error' for='id_{{ field.name }}' generated="true">{{ field.errors|join:". " }}</label>
+            {% endif %}
+            </li>
+        {% endfor %}
+
+        <li><label class="form_label" for="openid_link_submit"></label><input id="openid_link_submit" type="submit" value="Submit"/></li>
+    </ul>
+    </form>
+</fieldset>
+</div>
+
 {% endblock main_content %}

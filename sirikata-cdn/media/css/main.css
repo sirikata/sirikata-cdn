@@ -41,13 +41,16 @@ div#navigation ul li, div#useractions ul li {
     margin: 0;
     padding: 0;
 }
-div#navigation li a, div#useractions li a {
+div#navigation li a, div#useractions li a, div#useractions li span {
     display: block;
     float: left;
     padding: 5px 10px;
     color: #222222;
     text-decoration: none;
     font-weight: bold;
+}
+div#useractions li span {
+	border-right: 1px solid #aed0ea;
 }
 div#navigation li a {
     border-right: 1px solid #aed0ea;
@@ -82,4 +85,40 @@ div#footer h3 {
     margin: 0;
     padding: 10px;
     color: #362b36;
+}
+
+fieldset ul, fieldset li {
+    border: 0;
+    margin:0;
+    padding:0;
+}
+fieldset li {
+    list-style:none;
+    padding-bottom: 5px;
+}
+fieldset input, .form_element{
+    vertical-align: middle;
+    padding: 3px;
+}
+fieldset label.form_label {
+	vertical-align: middle;
+    text-align: right;
+    padding-right: 5px;
+    width:140px;
+    display: inline-block;
+}
+fieldset legend {
+	padding: 5px;
+}
+fieldset input[type=submit] {
+	margin-top: 10px;
+}
+
+.small {
+	font-size: 0.7em;
+}
+.form_message {
+    padding: 5px;
+    display: block;
+    font-style: italic;
 }
