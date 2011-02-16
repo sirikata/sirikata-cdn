@@ -50,4 +50,7 @@ class Command(NoArgsCommand):
         sys.alter_column('SirikataCDN', 'OpenIdNonces', 'timestamp', LONG_TYPE)
         sys.alter_column('SirikataCDN', 'OpenIdNonces', 'salt', UTF8_TYPE)
 
+        sys.create_column_family('SirikataCDN', 'Sessions', comparator_type=UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'Sessions', 'serialized', UTF8_TYPE)
+
         print 'All done!'

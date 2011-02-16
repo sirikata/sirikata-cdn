@@ -53,9 +53,9 @@ def getRecordsByIndex(cf, column, value, count=100, columns=None):
     except UnavailableException:
         raise UnavailableError('Record was unavailable')
 
-def insertRecord(cf, rowkey, columns):
+def insertRecord(cf, rowkey, columns, ttl=None):
     try:
-        cf.insert(rowkey, columns)
+        cf.insert(rowkey, columns, ttl=ttl)
     except InvalidRequestException:
         raise InvalidRequestError('Invalid request for record %s' % (rowkey,))
     except TimedOutException:

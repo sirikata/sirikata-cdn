@@ -40,7 +40,7 @@ SECRET_KEY = 'u$az#fnxh2rk=+-lwvjfbkmfxzwq5b8xwrn%y#$-vc9ibb$oxo'
 SITE_ID = 1
 USE_I18N = True
 USE_L10N = True
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_ENGINE = 'cassandra_storage.cassandra_sessions_backend'
 
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
