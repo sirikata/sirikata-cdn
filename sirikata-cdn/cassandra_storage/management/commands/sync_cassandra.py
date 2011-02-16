@@ -26,7 +26,28 @@ class Command(NoArgsCommand):
               
         sys.create_keyspace('SirikataCDN', replication_factor=1)
         sys.create_column_family('SirikataCDN', 'Users', comparator_type=UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'Users', 'name', UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'Users', 'email', UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'Users', 'openid_identity', UTF8_TYPE)
+        sys.create_index('SirikataCDN', 'Users', 'openid_identity', UTF8_TYPE, index_name='openid_identity_index')
+        sys.alter_column('SirikataCDN', 'Users', 'openid_email', UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'Users', 'openid_name', UTF8_TYPE)
+        
         sys.create_column_family('SirikataCDN', 'Names', comparator_type=UTF8_TYPE)
+        
         sys.create_column_family('SirikataCDN', 'Files', comparator_type=BYTES_TYPE)
+        
+        sys.create_column_family('SirikataCDN', 'OpenIdAssocs', comparator_type=UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'server_url', UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'handle', UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'secret', BYTES_TYPE)
+        sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'issued', LONG_TYPE)
+        sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'lifetime', LONG_TYPE)
+        sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'assoc_type', UTF8_TYPE)
+        
+        sys.create_column_family('SirikataCDN', 'OpenIdNonces', comparator_type=UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'OpenIdNonces', 'server_url', UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'OpenIdNonces', 'timestamp', LONG_TYPE)
+        sys.alter_column('SirikataCDN', 'OpenIdNonces', 'salt', UTF8_TYPE)
 
         print 'All done!'

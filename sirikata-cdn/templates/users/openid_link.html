@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ block.super }} | Link OpenID Account{% endblock title %}
+
+{% block main_content %}
+{% if messages %}
+<ul id="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<div id="openid_identity">OpenID Identity: https://whatever</div>
+<form action="{% url users.views.openid_link_done %}" method="post" id="openid_link">
+    <fieldset>
+        <legend>Link your OpenID Account</legend>
+        <label for="desired_username">Username:</label>
+        <input id="desired_username" type="text" value=""/>
+        <label for="fullname">Name:</label>
+        <input id="fullname" type="text" value=""/>
+        <label for="email">Email:</label>
+        <input id="email" type="text" value=""/>
+        <input id="openid_link_submit" type="submit"/>
+    </fieldset>
+</form>
+{% endblock main_content %}
