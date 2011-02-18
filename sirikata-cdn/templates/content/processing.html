@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ block.super }} | Upload Processing{% endblock title %}
+
+{% block js_includes %}
+{{ block.super }}
+<script type="text/javascript"> 
+    $(document).ready(function() {
+        
+    });
+</script>
+{% endblock js_includes %} 
+
+{% block main_content %}
+
+<div id="upload_processing">
+Please wait while your upload is processing...
+</div>
+
+{% endblock main_content %}

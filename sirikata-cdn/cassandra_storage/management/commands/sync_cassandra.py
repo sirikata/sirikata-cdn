@@ -37,6 +37,7 @@ class Command(NoArgsCommand):
         
         sys.create_column_family('SirikataCDN', 'Files', comparator_type=BYTES_TYPE)
         
+        #Stores persistent openid associations (used by cassandra_openid.py)
         sys.create_column_family('SirikataCDN', 'OpenIdAssocs', comparator_type=UTF8_TYPE)
         sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'server_url', UTF8_TYPE)
         sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'handle', UTF8_TYPE)
@@ -44,13 +45,19 @@ class Command(NoArgsCommand):
         sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'issued', LONG_TYPE)
         sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'lifetime', LONG_TYPE)
         sys.alter_column('SirikataCDN', 'OpenIdAssocs', 'assoc_type', UTF8_TYPE)
-        
+        #Stores openid nonces (used by cassandra_openid.py)
         sys.create_column_family('SirikataCDN', 'OpenIdNonces', comparator_type=UTF8_TYPE)
         sys.alter_column('SirikataCDN', 'OpenIdNonces', 'server_url', UTF8_TYPE)
         sys.alter_column('SirikataCDN', 'OpenIdNonces', 'timestamp', LONG_TYPE)
         sys.alter_column('SirikataCDN', 'OpenIdNonces', 'salt', UTF8_TYPE)
 
+        #Stores web server session information (used by cassandra_sessions_backend.py)
         sys.create_column_family('SirikataCDN', 'Sessions', comparator_type=UTF8_TYPE)
         sys.alter_column('SirikataCDN', 'Sessions', 'serialized', UTF8_TYPE)
+        
+        #Stores temporary file upload data (used by cassandra_upload_handler.py)
+        sys.create_column_family('SirikataCDN', 'TempFiles', comparator_type=UTF8_TYPE)
+        sys.alter_column('SirikataCDN', 'TempFiles', 'size', LONG_TYPE)
+        sys.alter_column('SirikataCDN', 'TempFiles', 'chunk_list', UTF8_TYPE)
 
         print 'All done!'

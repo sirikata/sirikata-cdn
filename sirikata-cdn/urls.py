@@ -3,6 +3,7 @@ from django.conf import settings
 
 urlpatterns = patterns('',
     (r'^upload/$', 'content.views.upload'),
+    (r'^upload/processing$', 'content.views.upload_processing'),
     (r'^login/openid_select$', 'users.views.openid_select'),
     (r'^login/openid_return$', 'users.views.openid_return'),
     (r'^login/openid_link$', 'users.views.openid_link'),

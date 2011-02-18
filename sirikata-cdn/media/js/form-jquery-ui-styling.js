@@ -30,6 +30,9 @@ $.widget("ui.styleform", {
 	},
 	
 	textelements : function(element){
+		if($(element).is("textarea")) {
+			$(element).parent().find("label").addClass("multiline");
+		}
 		/*$(element).bind({
 			focusin: function() {
 				$(this).toggleClass('ui-state-focus');

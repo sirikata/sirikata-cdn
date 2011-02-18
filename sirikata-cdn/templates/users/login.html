@@ -13,6 +13,7 @@
 <script type="text/javascript" src="{{ MEDIA_URL }}js/openid-en.js"></script>
 <script type="text/javascript"> 
     $(document).ready(function() {
+    	$("#openid_login").styleform();
         openid.init('openid_identifier');
     });
 </script>
@@ -26,6 +27,7 @@
     {% endfor %}
 </ul>
 {% endif %}
+<div id="openid_login">
 <form action="{% url users.views.openid_select %}" method="get" id="openid_form">
     <input type="hidden" name="action" value="verify" />
     <fieldset>
@@ -44,4 +46,5 @@
         </noscript>
     </fieldset>
 </form>
+</div>
 {% endblock main_content %}

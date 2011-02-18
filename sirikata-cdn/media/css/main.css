@@ -107,11 +107,22 @@ fieldset label.form_label {
     width:140px;
     display: inline-block;
 }
+fieldset label.multiline {
+	vertical-align: top;
+}
 fieldset legend {
 	padding: 5px;
 }
-fieldset input[type=submit] {
+fieldset input[type=submit], div#progressbar {
 	margin-top: 10px;
+}
+fieldset input[type=submit]#openid_submit {
+    margin-top: 0px;
+}
+div#progressbar {
+	display: inline-block;
+	width: 250px;
+	margin-left: 5px;
 }
 
 .small {

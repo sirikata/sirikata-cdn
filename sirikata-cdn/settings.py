@@ -41,6 +41,7 @@ SITE_ID = 1
 USE_I18N = True
 USE_L10N = True
 SESSION_ENGINE = 'cassandra_storage.cassandra_sessions_backend'
+FILE_UPLOAD_HANDLERS = ('cassandra_storage.cassandra_upload_handler.CassandraFileUploadHandler',)
 
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
