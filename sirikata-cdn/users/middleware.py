@@ -1,6 +1,58 @@
 from cassandra_storage.cassandra_util import *
+import json
+import datetime
+import operator
 
 USERS = getColumnFamily('Users')
+
+def get_pending_uploads(username):
+    try:
+        pending_range = getColRange(USERS, username, column_start="uploading:.",
+                                    column_finish="uploading:~", include_timestamp=True)
+    except DatabaseError:
+        return []
+
+    records = []    
+    for p in pending_range:
+        for colkey, value in p[1].iteritems():
+            task_id = colkey.split(":")[1]
+            values = json.loads(value[0])
+            values['task_id'] = task_id
+            values['timestamp'] = datetime.datetime.fromtimestamp(value[1] / 1000000L)
+            records.append(values)
+    
+    records = sorted(records, key=operator.itemgetter("timestamp"))
+    
+    return records
+
+def get_pending_upload(username, task_id):
+    col_key = "uploading:%s" % task_id
+    
+    try:
+        pending = getRecord(USERS, username, columns=[col_key])
+    except DatabaseError:
+        raise
+
+    values = json.loads(pending[col_key])
+    values['task_id'] = task_id
+    return values
+
+def remove_pending_upload(username, task_id):
+    col_key = "uploading:%s" % task_id
+    
+    try:
+        removeColumns(USERS, username, columns=[col_key])
+    except DatabaseError:
+        raise
+
+def save_upload_task(username, task_id, row_key, filename, subfiles):
+    vals = {"main_rowkey":row_key, "filename":filename,"subfiles":subfiles}
+    upload_rec = json.dumps(vals)
+    task = {"uploading:%s" % task_id : upload_rec}
+    try:
+        insertRecord(USERS, username, columns=task)
+    except DatabaseError:
+        raise
 
 def login_with_openid_identity(request, identity_url):
     try:

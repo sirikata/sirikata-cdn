@@ -60,4 +60,7 @@ class Command(NoArgsCommand):
         sys.alter_column('SirikataCDN', 'TempFiles', 'size', LONG_TYPE)
         sys.alter_column('SirikataCDN', 'TempFiles', 'chunk_list', UTF8_TYPE)
 
+        #Stores results from celery tasks
+        sys.create_column_family('SirikataCDN', 'CeleryResults', comparator_type=UTF8_TYPE)
+
         print 'All done!'

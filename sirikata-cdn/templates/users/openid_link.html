@@ -15,14 +15,6 @@
 {% endblock js_includes %} 
 
 {% block main_content %}
-{% if messages %}
-<ul id="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
-
 <div id="openid_link">
 <fieldset id="openid_link_fieldset">
     <legend id="openid_link_legend">Link your OpenID Account</legend>

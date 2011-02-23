@@ -18,25 +18,27 @@
 {% endblock js_includes %} 
 
 {% block main_content %}
-{% if messages %}
-<ul id="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
-
 <div id="upload_content">
 <fieldset id="upload_content_fieldset">
     <legend id="upload_content_legend">Upload Content</legend>
-    <form enctype="multipart/form-data" action="{% url content.views.upload %}" method="post" id="upload_content_form">{% csrf_token %}
+    {% if task_id %}
+    <form enctype="multipart/form-data" action="{% url content.views.upload task_id %}" method="post" id="upload_content_form">
+    {% else %}
+    <form enctype="multipart/form-data" action="{% url content.views.upload %}" method="post" id="upload_content_form">
+    {% endif %}
+    {% csrf_token %}
     <ul>
     
         <li><span class="form_message">Here you can choose a file to upload. Currently
         only Collada is supported. You can upload a .dae file or a zip file that
         contains a .dae file and textures.</span></li>
     
-        {% for field in form %}
+        {% for existing in existing_files %}
+        <li><label class="form_label">{{ existing }}</label>
+        <label>&lt;Uploaded&gt;</label></li>
+        {% endfor %}
+    
+        {% for field in form.visible_fields %}
             <li>
             <label class="form_label" for='id_{{ field.name }}'>{{ field.label }}</label>
             {{ field }}
@@ -50,6 +52,9 @@
 
         <li><label class="form_label" for="upload_content_submit"></label><input id="upload_content_submit" type="submit" value="Submit"/></li>
     </ul>
+    {% for hidden in form.hidden_fields %}
+    {{ hidden }}
+    {% endfor %}
     </form>
 </fieldset>
 </div>

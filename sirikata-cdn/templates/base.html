@@ -34,6 +34,7 @@
 <div id="useractions">
 <ul id="useractionlist">
 {% if request.user.is_authenticated %}
+<li><a href="/uploads/">My Uploads</a></li>
 <li><span>{{ request.user.username }}</span></li>
 <li><a href="/logout/">Logout</a></li>
 {% else %}
@@ -45,6 +46,13 @@
 
 <div id="content_wrapper">
 <div id="content">
+{% if messages %}
+<ul id="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
 {% block main_content %}
 Welcome to the Sirikata CDN website!
 {% endblock main_content %}

@@ -49,8 +49,8 @@ div#navigation li a, div#useractions li a, div#useractions li span {
     text-decoration: none;
     font-weight: bold;
 }
-div#useractions li span {
-	border-right: 1px solid #aed0ea;
+div#useractions li span, div#useractions li a {
+	border-left: 1px solid #aed0ea;
 }
 div#navigation li a {
     border-right: 1px solid #aed0ea;
@@ -106,6 +106,7 @@ fieldset label.form_label {
     padding-right: 5px;
     width:140px;
     display: inline-block;
+    word-wrap: break-word;
 }
 fieldset label.multiline {
 	vertical-align: top;
@@ -125,6 +126,44 @@ div#progressbar {
 	margin-left: 5px;
 }
 
+div.pagelet h2, div.pagelet table, div.pagelet tr, div.pagelet th, div.pagelet td {
+	margin: 0;
+	padding: 0;
+}
+div.pagelet h2 {
+	margin-bottom: 10px;
+}
+div.pagelet table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 20px;
+}
+div.pagelet th {
+	text-align: left;
+	background: #deedf7;
+	padding-left: 5px;
+	padding-bottom: 1px;
+	padding-top: 1px;
+    border-top: 1px solid #aed0ea;
+    border-bottom: 1px solid #aed0ea;
+}
+div.pagelet td.label {
+	color: #666666;
+	background: #ffffff;
+	width: 140px;
+	vertical-align: top;
+	text-align: left;
+	font-weight: bold;
+}
+div.pagelet td {
+	background: #ffffff;
+	border-bottom: 1px solid #999999;
+	padding-bottom: 2px;
+	padding-top: 2px;
+	padding-left: 1px;
+	padding-right: 1px;
+}
+
 .small {
 	font-size: 0.7em;
 }
@@ -132,4 +171,15 @@ div#progressbar {
     padding: 5px;
     display: block;
     font-style: italic;
+}
+.italic {
+    font-style: italic;
+}
+
+ul#messages li.info {
+	font-weight: bold;
+}
+ul#messages li.error {
+    font-weight: bold;
+    color: #ff0000;
 }

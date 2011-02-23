@@ -1,5 +1,4 @@
 import os
-
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 # ========= THESE ARE ITEMS YOU MIGHT WANT TO CHANGE ============
@@ -42,6 +41,7 @@ USE_I18N = True
 USE_L10N = True
 SESSION_ENGINE = 'cassandra_storage.cassandra_sessions_backend'
 FILE_UPLOAD_HANDLERS = ('cassandra_storage.cassandra_upload_handler.CassandraFileUploadHandler',)
+os.environ.setdefault("CELERY_CONFIG_MODULE", "celery_tasks.celeryconfig")
 
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',

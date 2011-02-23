@@ -6,15 +6,42 @@
 {{ block.super }}
 <script type="text/javascript"> 
     $(document).ready(function() {
-        
+    	{% if erase %}
+        $('#ok_erase_button').button();
+        {% else %}{% if edit_link %}
+        $('#edit_button').button();
+        {% else %}
+        $('#refresh_button').button();
+        {% endif %}{% endif %}
     });
 </script>
 {% endblock js_includes %} 
 
 {% block main_content %}
 
-<div id="upload_processing">
-Please wait while your upload is processing...
-</div>
+<div class="pagelet">
+
+<h2>Upload is being processed</h2>
+
+<table>
+<thead><th colspan="2">Status</th></thead>
+{% if error_message %}
+<tr><td class="label">Error Message</td><td>{{ error_message }}</td></tr>
+{% endif %}
+<tr><td class="label">State</td><td>{{ task_state }}</td></tr>
+</table>
+
+<table>
+<thead><th colspan="2">Task Details</th></thead>
+<tr><td class="label">Task ID</td><td>{{ task_id }}</td></tr>
+</table>
+
+{% if erase %}
+<a id="ok_erase_button" href="{% url content.views.upload_processing 'confirm' task_id %}">Okay - Remove this upload</a>
+{% else %}{% if edit_link %}
+<a id="edit_button" href="{{ edit_link }}">Continue</a>
+{% else %}
+<a id="refresh_button" href="{% url content.views.upload_processing task_id %}">Refresh</a>
+{% endif %}{% endif %}
 
 {% endblock main_content %}

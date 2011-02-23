@@ -20,13 +20,6 @@
 {% endblock js_includes %} 
 
 {% block main_content %}
-{% if messages %}
-<ul id="messages">
-    {% for message in messages %}
-    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-    {% endfor %}
-</ul>
-{% endif %}
 <div id="openid_login">
 <form action="{% url users.views.openid_select %}" method="get" id="openid_form">
     <input type="hidden" name="action" value="verify" />

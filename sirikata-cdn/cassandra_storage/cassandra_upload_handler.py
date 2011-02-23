@@ -50,7 +50,8 @@ class CassandraFileUploadHandler(FileUploadHandler):
         Return a file object if we're activated.
         """
         try:
-            columns = {'size':file_size,
+            columns = {'username':self.request.session['username'],
+                       'size':file_size,
                        'chunk_list':','.join(str(c) for c in self.chunk_list)}
             cass.insertRecord(self._cf, self.uuid, columns)
         except cass.DatabaseError:

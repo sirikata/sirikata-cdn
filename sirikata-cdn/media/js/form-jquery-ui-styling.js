@@ -56,7 +56,7 @@ $.widget("ui.styleform", {
 	},
 	
 	selector : function(element) {
-	
+		$(element).removeClass("ui-corner-all");
 	}
 
 });

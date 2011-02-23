@@ -5,29 +5,8 @@ This repository contains the files needed to host a Sirikata CDN
 server. The website is written in
 [Django](http://www.djangoproject.com/) but instead of using Django's
 models, we use [Cassandra](http://cassandra.apache.org/) as the
-database backend.
+database backend, interfaced with using [pycassa](https://github.com/pycassa/pycassa). [Celery](http://celeryproject.org/) is used for farming off tasks in the background, some of which use the [pycollada](https://github.com/pycollada/pycollada) library. Instead of maintaining user accounts, [python-openid](https://github.com/openid/python-openid) is used to get authentication from [OpenID](http://openid.net/) providers. [openid-selector](http://code.google.com/p/openid-selector/) is used to choose an OpenID provider.
 
 Installation
 ============
-1. First, get the code and initialize the submodules:
-       git clone git://github.com/sirikata/sirikata-cdn.git
-       cd sirikata-cdn
-       git submodule init
-       git submodule update
-1. Next, set up Cassandra. See http://cassandra.apache.org/
-1. Make sure you have pycassa working:
-       cd externals/pycassa
-       python setup.py install
-1. Make sure you have python-openid working:
-       cd externals/openid
-       python setup.py install
-1. Make sure you have thrift05 installed:
-       easy_install thrift05
-1. Edit sirikata-cdn/settings.py:
-    * SECRET_KEY: Randomly generate this. See Django docs for more info.
-1. Edit sirikata-cdn/cassandra_storage/settings.py:
-    * CASSANDRA_SERVER: The host and port of Cassandra
-1. Next, set up the CDN's Cassandra schema:
-       cd sirikata-cdn
-       python manage.py sync_cassandra
-1. Configure a web server. See Django docs for how to do this.
+Coming soon!

@@ -38,6 +38,20 @@ def getRecord(cf, rowkey, columns=None):
     except UnavailableException:
         raise UnavailableError('Record %s was unavailable' % (rowkey,))
 
+def getColRange(cf, rowkey, column_start, column_finish, include_timestamp=False):
+    try:
+        return cf.get_range(start=rowkey, finish=rowkey, 
+                            column_start=column_start, column_finish=column_finish,
+                            include_timestamp=include_timestamp)
+    except NotFoundException:
+        raise NotFoundError('Record %s not found' % (rowkey,))
+    except InvalidRequestException:
+        raise InvalidRequestError('Invalid request for record %s' % (rowkey))
+    except TimedOutException:
+        raise TimedOutError('Request for record %s timed out' % (rowkey,))
+    except UnavailableException:
+        raise UnavailableError('Record %s was unavailable' % (rowkey,))
+
 def getRecordsByIndex(cf, column, value, count=100, columns=None):
     try:
         expr = pycassa.index.create_index_expression(column, value)
@@ -63,9 +77,9 @@ def insertRecord(cf, rowkey, columns, ttl=None):
     except UnavailableException:
         raise UnavailableError('Record %s was unavailable' % (rowkey,))
 
-def removeRecord(cf, rowkey):
+def removeColumns(cf, rowkey, columns):
     try:
-        cf.remove(rowkey)
+        return cf.remove(rowkey, columns=columns)
     except NotFoundException:
         raise NotFoundError('Record %s not found' % (rowkey,))
     except InvalidRequestException:
@@ -74,3 +88,7 @@ def removeRecord(cf, rowkey):
         raise TimedOutError('Request for record %s timed out' % (id,))
     except UnavailableException:
         raise UnavailableError('Record %s was unavailable' % (id,))
+
+def removeRecord(cf, rowkey):
+    return removeColumns(cf, rowkey, columns=None)
+    

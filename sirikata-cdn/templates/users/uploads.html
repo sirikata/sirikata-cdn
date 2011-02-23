@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ block.super }} | My Uploads{% endblock title %}
+
+{% block css_includes %}
+{{ block.super }}
+<style type="text/css">
+.ui-widget { font-size: 0.8em; }
+</style>
+{% endblock css_includes %}
+
+{% block js_includes %}
+{{ block.super }}
+<script type="text/javascript"> 
+    $(document).ready(function() {
+    	$("#upload_tabs").tabs();
+    	//$("#tabs > ul").tabs();
+    	$("#upload_tabs").bind("tabsshow", function(event, ui) { 
+    	    window.location.hash = ui.tab.hash;
+    	})
+    });
+</script>
+{% endblock js_includes %} 
+
+{% block main_content %}
+<div id="upload_tabs">
+    <ul>
+        <li><a href="#Uploaded">Uploaded ({{ uploaded|length }})</a></li>
+        <li><a href="#Pending">Pending ({{ pending|length }})</a></li>
+        <li><a href="#Favorites">Favorites ({{ favorites|length }})</a></li>
+    </ul>
+    <div id="Uploaded">
+        {% if uploaded %}
+            {% for up in uploaded %}
+                
+            {% endfor %}
+        {% else %}
+            <span class="italic">You don't have any uploads</span>
+        {% endif %}
+    </div>
+    <div id="Pending">
+        {% if pending %}
+            <span class="italic">The following uploads are awaiting an action from you:</span>
+            <ul>
+	        {% for up in pending %}
+	            <li>{{ up.timestamp|date:"M-d-Y g:iA" }} -
+	            <a href="{% url content.views.upload_processing up.task_id %}">{{ up.filename }}</a></li>
+	        {% endfor %}
+	        </ul>
+        {% else %}
+            <span class="italic">You don't have any pending uploads</span>
+        {% endif %}
+    </div>
+    <div id="Favorites">
+        {% if favorites %}
+            {% for up in favorites %}
+                
+            {% endfor %}
+        {% else %}
+            <span class="italic">You don't have any favorite uploads</span>
+        {% endif %}
+    </div>
+</div>
+{% endblock main_content %}
