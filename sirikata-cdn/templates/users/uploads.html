@@ -32,7 +32,8 @@
     <div id="Uploaded">
         {% if uploaded %}
             {% for up in uploaded %}
-                
+                <li>{{ up.timestamp|date:"M-d-Y g:iA" }} -
+                <a href="">{{ up.path }}</a></li>
             {% endfor %}
         {% else %}
             <span class="italic">You don't have any uploads</span>

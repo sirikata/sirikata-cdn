@@ -172,6 +172,11 @@ div.pagelet td {
     display: block;
     font-style: italic;
 }
+.form_labeled_message {
+    font-style: italic;
+    vertical-align: top;
+    padding-left: 5px;
+}
 .italic {
     font-style: italic;
 }
@@ -182,4 +187,12 @@ ul#messages li.info {
 ul#messages li.error {
     font-weight: bold;
     color: #ff0000;
+}
+
+span.path_name {
+	padding-left: 3px;
+	padding-right: 0px;
+    font-size: 0.9em;
+    font-weight: bold;
+    font-family: Courier New, Courier;
 }

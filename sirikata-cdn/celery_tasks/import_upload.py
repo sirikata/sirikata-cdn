@@ -2,8 +2,11 @@ import collada as coll
 from celery.task import task
 import cassandra_storage.cassandra_util as cass
 from StringIO import StringIO
+import Image
 import zipfile
 import os.path
+import hashlib
+import json
 
 import time
 import sys
@@ -31,6 +34,76 @@ class ColladaError(Exception):
     def __init__(self, orig, *args, **kwargs):
         super(ColladaError,self).__init__(orig, *args, **kwargs)
         self.orig = orig
+class ImageError(Exception):
+    """Raised when a given image doesn't load properly"""
+    def __init__(self, filename, *args, **kwargs):
+        super(ImageError,self).__init__(filename, *args, **kwargs)
+        self.filename = filename
+
+def save_file_data(hash, data):
+    cf = cass.getColumnFamily("Files")
+    
+    try:
+        rec = cass.getRecord(cf, hash, columns=[])
+        #already exists so return
+        return
+    except cass.NotFoundError:
+        pass
+    except cass.DatabaseError:
+        raise DatabaseError()
+    
+    try:
+        rec = cass.insertRecord(cf, hash, columns={"data": data})
+    except cass.DatabaseError:
+        raise DatabaseError()
+
+def save_file_name(path, version_num, hash_key, length):
+    cf = cass.getColumnFamily("Names")
+    
+    dict = {'hash': hash_key, 'size': length}
+    col_val = json.dumps(dict)
+    
+    cf = cass.getColumnFamily("Names")
+    try:
+        cass.insertRecord(cf, path, columns={version_num: col_val})
+    except cass.DatabaseError:
+        raise DatabaseError()
+
+def save_version_type(path, version_num, hash_key, length, subfile_names, type_id):
+    cf = cass.getColumnFamily("Names")
+    
+    try:
+        rec = cass.getRecord(cf, path, columns=[version_num])
+        type_dict = json.loads(rec[version_num])
+    except cass.NotFoundError:
+        type_dict = {}
+    except cass.DatabaseError:
+        raise DatabaseError()
+    
+    type_dict[type_id] = {'hash': hash_key, 'size': length, 'subfiles': subfile_names}
+    
+    try:
+        cass.insertRecord(cf, path, columns={version_num: json.dumps(type_dict)})
+    except cass.DatabaseError:
+        raise DatabaseError()
+
+def get_new_version_from_path(path, file_type):
+    cf = cass.getColumnFamily("Names")
+    
+    try:
+        rec = cass.getRecord(cf, path, columns=["latest"])
+        latest = str(int(rec['latest'])+1)
+    except cass.NotFoundError:
+        latest = "0"
+    except cass.DatabaseError:
+        raise DatabaseError()
+
+    try:
+        cass.insertRecord(cf, path, columns={"latest":latest, "type":file_type})
+    except cass.DatabaseError:
+        raise DatabaseError()
+
+    return latest
 
 def get_temp_file(rowkey):
     cf = cass.getColumnFamily("TempFiles")
@@ -42,8 +115,6 @@ def get_temp_file(rowkey):
     file_size = rec['size']
     chunk_list = rec['chunk_list'].split(',')
     
-    #import_upload.update_state(state="READING")
-    
     try:
         chunks = cass.getRecord(cf, rowkey, columns=chunk_list)
     except cass.DatabaseError:
@@ -51,18 +122,7 @@ def get_temp_file(rowkey):
     file_data = ''.join([chunks[c] for c in chunk_list])
     return file_data
 
-@task
-def import_upload(main_rowkey, subfiles, selected_dae=None):
-    """main_rowkey should be a row key that points to the row in TempFiles
-    that contains the main (.dae) file.
-    selected_dae is an optional parameter that selects the dae file in an
-    archive that containes multiple dae files
-    subfiles is a dict where the key is the file name string and the value is
-    the row key in TempFiles that contains the file
-    e.g. ('fe389', {'sub.jpg':'39c4d'}) """
-    
-    file_data = get_temp_file(main_rowkey)
-    
+def get_file_or_zip(file_data, selected_dae):
     try:
         zip = zipfile.ZipFile(StringIO(file_data), 'r')
         
@@ -84,11 +144,13 @@ def import_upload(main_rowkey, subfiles, selected_dae=None):
         
         dae_data = zip.read(dae_zip_name)
     except zipfile.BadZipfile:
+        zip = None
         dae_zip_name = None
         dae_data = file_data
-    
-    #import_upload.update_state(state="LOADING")
-    
+        
+    return (zip, dae_zip_name, dae_data)
+
+def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles):
     try:
         col = coll.Collada(StringIO(dae_data))
     except coll.DaeError as err:
@@ -120,13 +182,67 @@ def import_upload(main_rowkey, subfiles, selected_dae=None):
     if len(not_found_list) > 0:
         raise SubFilesNotFound(not_found_list)
     
-    return "nice"
+    image_objs = {}
+    for image_name, image_data in subfile_data.iteritems():
+        try:
+            im = Image.open(StringIO(image_data))
+            im.load()
+        except IOError:
+            raise ImageError(image_name)
+        image_objs[image_name] = im
+        
+    return (col, subfile_data, image_objs)
+
+@task
+def import_upload(main_rowkey, subfiles, selected_dae=None):
+    """main_rowkey should be a row key that points to the row in TempFiles
+    that contains the main (.dae) file.
+    selected_dae is an optional parameter that selects the dae file in an
+    archive that containes multiple dae files
+    subfiles is a dict where the key is the file name string and the value is
+    the row key in TempFiles that contains the file
+    e.g. ('fe389', {'sub.jpg':'39c4d'}) """
     
-if __name__ == "__main__":
-    #print import_upload(sys.argv[1], [])
-    #print import_upload('a80897caa39a40e3a50c5b4b1c835961', []) #ducknested.zip
-    #print import_upload('65ee819384fb4e1cb95a5665486b06c6', []) #duck.zip
-    #print import_upload('da834bbf55af4217859ea701d40aac14', []) #ducknone.zip
-    #print import_upload('c8c13de03b504b5db89fa167186776cc', []) #duck.2.zip
-    print import_upload('c90b170b22c84c3a91fa7dbf13929f00', []) #duck.missing.sub.zip
+    import_upload.update_state(state="LOADING")
+    file_data = get_temp_file(main_rowkey)
+    (zip, dae_zip_name, dae_data) = get_file_or_zip(file_data, selected_dae)
     
+    import_upload.update_state(state="CHECKING_COLLADA")
+    get_collada_and_images(zip, dae_zip_name, dae_data, subfiles)
+
+@task
+def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None):
+    import_upload.update_state(state="LOADING")
+    file_data = get_temp_file(main_rowkey)
+    (zip, dae_zip_name, dae_data) = get_file_or_zip(file_data, selected_dae)
+    
+    import_upload.update_state(state="CHECKING_COLLADA")
+    (collada_obj, subfile_data, image_objs) = get_collada_and_images(zip, dae_zip_name, dae_data, subfiles)
+
+    import_upload.update_state(state="SAVING_ORIGINAL")
+    new_version_num = get_new_version_from_path(path, file_type="collada")
+    
+    #Make sure image paths are just the base name
+    current_prefix = "original"
+    subfile_names = []
+    for img in collada_obj.images:
+        rel_path = img.path
+        base_name = os.path.basename(img.path)
+        img.path = "./%s" % base_name
+        img.save()
+        img_hex_key = hashlib.sha256(subfile_data[base_name]).hexdigest()
+        save_file_data(img_hex_key, subfile_data[base_name])
+        img_path = "%s/%s/%s" % (path, current_prefix, base_name)
+        img_len = len(subfile_data[base_name])
+        img_version_num = get_new_version_from_path(img_path, file_type="image")
+        save_file_name(img_path, img_version_num, img_hex_key, img_len)
+        subfile_names.append("%s/%s" % (img_path, img_version_num))
+
+    str_buffer = StringIO()
+    collada_obj.root.write(str_buffer)
+    orig_save_data = str_buffer.getvalue()
+    orig_hex_key = hashlib.sha256(orig_save_data).hexdigest()
+    save_file_data(orig_hex_key, orig_save_data)
+    save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data), subfile_names, "original")
+
+    return "%s/%s" % (path, new_version_num)

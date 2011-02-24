@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ block.super }} | Import File{% endblock title %}
+
+{% block js_includes %}
+{{ block.super }}
+<script type="text/javascript"> 
+    $(document).ready(function() {
+        $("#upload_import").styleform();
+        $("#upload_import_form").validate({
+            errorClass: "ui-state-error"
+        });
+    });
+</script>
+{% endblock js_includes %} 
+
+{% block main_content %}
+<div id="upload_import">
+<fieldset id="upload_import_fieldset">
+    <legend id="upload_import_legend">Upload Import</legend>
+    <form enctype="multipart/form-data" action="{% url content.views.upload_import task_id %}" method="post" id="upload_import_form">{% csrf_token %}
+    <ul>
+    
+        <li><span class="form_message">Specify metadata about the file and choose a path where you want to store it in your account.</span></li>
+    
+        <li><label class="form_label multiline">Filename</label><span class="form_labeled_message">{{ filename }}</span></li>
+    
+        {% for field in form.visible_fields %}
+            <li>
+            <label class="form_label" for='id_{{ field.name }}'>{{ field.label }}</label>
+            {% if field.name == "path" %}
+            <span class="path_name">/{{ request.user.username }}/</span>
+            {% endif %}
+            {{ field }}
+            {% if field.errors %}
+            <label class='ui-state-error' for='id_{{ field.name }}' generated="true">{{ field.errors|join:". " }}</label>
+            {% endif %}
+            </li>
+        {% endfor %}
+
+        <li><label class="form_label" for="upload_import_submit"></label><input id="upload_import_submit" type="submit" value="Submit"/></li>
+    </ul>
+    {% for hidden in form.hidden_fields %}
+    {{ hidden }}
+    {% endfor %}
+    </form>
+</fieldset>
+</div>
+
+{% endblock main_content %}

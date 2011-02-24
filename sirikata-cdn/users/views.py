@@ -12,7 +12,7 @@ import openid.extensions.ax as ax
 from openid import oidutil
 from cassandra_storage.cassandra_openid import CassandraStore
 from middleware import login_with_openid_identity, associate_openid_login
-from middleware import logout_user, get_pending_uploads
+from middleware import logout_user, get_pending_uploads, get_uploads
 
 #Mutes the logging output from openid. Otherwise it prints to stderr
 def dummyOpenIdLoggingFunction(message, level=0):
@@ -163,6 +163,7 @@ def uploads(request):
     if not request.user['is_authenticated']:
         return redirect('users.views.login')
     pending = get_pending_uploads(request.session['username'])
-    view_params = {'pending':pending}
+    uploaded = get_uploads(request.session['username'])
+    view_params = {'pending':pending, 'uploaded':uploaded}
     return render_to_response('users/uploads.html', view_params, context_instance = RequestContext(request))
     

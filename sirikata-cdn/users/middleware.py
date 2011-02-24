@@ -25,6 +25,25 @@ def get_pending_uploads(username):
     
     return records
 
+def get_uploads(username):
+    try:
+        upload_range = getColRange(USERS, username, column_start="uploaded:.",
+                                    column_finish="uploaded:~", include_timestamp=True)
+    except DatabaseError:
+        return []
+
+    records = []    
+    for p in upload_range:
+        for colkey, value in p[1].iteritems():
+            values = {}
+            values['path'] = colkey.split(":")[1]
+            values['timestamp'] = datetime.datetime.fromtimestamp(value[1] / 1000000L)
+            records.append(values)
+    
+    records = sorted(records, key=operator.itemgetter("timestamp"))
+    
+    return records
+
 def get_pending_upload(username, task_id):
     col_key = "uploading:%s" % task_id
     
@@ -45,12 +64,19 @@ def remove_pending_upload(username, task_id):
     except DatabaseError:
         raise
 
-def save_upload_task(username, task_id, row_key, filename, subfiles):
-    vals = {"main_rowkey":row_key, "filename":filename,"subfiles":subfiles}
+def save_upload_task(username, task_id, row_key, filename, subfiles, dae_choice, task_name):
+    vals = {"main_rowkey":row_key, "filename":filename,"subfiles":subfiles,
+            'dae_choice':dae_choice, 'task_name': task_name}
     upload_rec = json.dumps(vals)
     task = {"uploading:%s" % task_id : upload_rec}
     try:
         insertRecord(USERS, username, columns=task)
+    except DatabaseError:
+        raise
+
+def save_file_upload(username, path):
+    try:
+        insertRecord(USERS, username, columns={"uploaded:%s" % path : ""})
     except DatabaseError:
         raise
 

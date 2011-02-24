@@ -28,6 +28,9 @@
 {% if error_message %}
 <tr><td class="label">Error Message</td><td>{{ error_message }}</td></tr>
 {% endif %}
+{% if success_message %}
+<tr><td class="label">Message</td><td>{{ success_message }}</td></tr>
+{% endif %}
 <tr><td class="label">State</td><td>{{ task_state }}</td></tr>
 </table>
 
