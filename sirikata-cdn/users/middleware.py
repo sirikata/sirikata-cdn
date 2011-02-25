@@ -21,7 +21,7 @@ def get_pending_uploads(username):
             values['timestamp'] = datetime.datetime.fromtimestamp(value[1] / 1000000L)
             records.append(values)
     
-    records = sorted(records, key=operator.itemgetter("timestamp"))
+    records = sorted(records, key=operator.itemgetter("timestamp"), reverse=True)
     
     return records
 
@@ -40,7 +40,7 @@ def get_uploads(username):
             values['timestamp'] = datetime.datetime.fromtimestamp(value[1] / 1000000L)
             records.append(values)
     
-    records = sorted(records, key=operator.itemgetter("timestamp"))
+    records = sorted(records, key=operator.itemgetter("timestamp"), reverse=True)
     
     return records
 

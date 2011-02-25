@@ -41,8 +41,13 @@
             {% endif %}
             <table>
             <thead><th colspan="2">File Info</th></thead>
-            <tr><td class="label">Hash</td><td><a href="{% url content.views.download props.hash %}">{{ props.hash }}</a></td></tr>
-            <tr><td class="label">Size</td><td>{{ props.size|filesizeformat }}</td></tr>
+            {% if props.zip %}
+            <tr><td class="label">Download Zip</td><td><a href="{% url content.views.download props.zip basename %}.zip">{{ basename }}.zip</a></td></tr>
+            <tr><td class="label">Zip Hash</td><td>{{ props.zip }}</td></tr>
+            {% endif %}
+            <tr><td class="label">Download Mesh</td><td><a href="{% url content.views.download props.hash basename %}">{{ basename }}</a></td></tr>
+            <tr><td class="label">Mesh Hash</td><td>{{ props.hash }}</td></tr>
+            <tr><td class="label">Mesh Size</td><td>{{ props.size|filesizeformat }}</td></tr>
             {% for subfile in props.subfiles %}
             <tr><td class="label">Subfile {{ forloop.counter }}</td>
             <td><a href="{% url content.views.view subfile|slice:"1:" %}">{{ subfile }}</a></td></tr>

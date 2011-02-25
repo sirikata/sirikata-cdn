@@ -306,7 +306,7 @@ def view(request, filename):
         html_page = 'content/view.html'
     return render_to_response(html_page, view_params, context_instance = RequestContext(request))
 
-def download(request, hash):
+def download(request, hash, filename=None):
     rec = get_hash(hash)
     data = rec['data']
     mime = rec['mimetype']

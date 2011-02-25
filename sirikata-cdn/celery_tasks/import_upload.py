@@ -54,8 +54,9 @@ def save_file_name(path, version_num, hash_key, length):
     except cass.DatabaseError:
         raise DatabaseError()
 
-def save_version_type(path, version_num, hash_key, length, subfile_names, title, description, type_id):
+def save_version_type(path, version_num, hash_key, length, subfile_names, title, description, zip_key, type_id):
     cf = cass.getColumnFamily("Names")
+    time_index_cf = cass.getColumnFamily("NameTimestampIndex")
     
     try:
         rec = cass.getRecord(cf, path, columns=[version_num])
@@ -75,10 +76,16 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, title,
     
     version_dict['types'][type_id] = {'hash': hash_key,
                                       'size': length,
-                                      'subfiles': subfile_names}
+                                      'subfiles': subfile_names,
+                                      'zip': zip_key}
     
     try:
         cass.insertRecord(cf, path, columns={version_num: json.dumps(version_dict)})
+    except cass.DatabaseError:
+        raise DatabaseError()
+
+    try:
+        cass.insertRecord(time_index_cf, "%s:%s/%s" % (str(int(time.time())), path, version_num), {'x':''} )
     except cass.DatabaseError:
         raise DatabaseError()
 
@@ -238,10 +245,23 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     collada_obj.root.write(str_buffer)
     orig_save_data = str_buffer.getvalue()
     orig_hex_key = hashlib.sha256(orig_save_data).hexdigest()
+    
     try: save_file_data(orig_hex_key, orig_save_data, "application/xml")
     except: raise DatabaseError()
+    
+    zip_buffer = StringIO()
+    combined_zip = zipfile.ZipFile(zip_buffer, mode='w', compression=zipfile.ZIP_DEFLATED)
+    combined_zip.writestr(os.path.basename(path), orig_save_data)
+    for img_name, img_data in subfile_data.iteritems():
+        combined_zip.writestr(img_name, img_data)
+    combined_zip.close()
+    zip_save_data = zip_buffer.getvalue()
+    zip_hex_key = hashlib.sha256(zip_save_data).hexdigest()
+    try: save_file_data(zip_hex_key, zip_save_data, "application/zip")
+    except: raise DatabaseError()
+    
     save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),
-                      subfile_names, title, description, "original")
+                      subfile_names, title, description, zip_hex_key, "original")
 
     path_with_vers = "%s/%s" % (path, new_version_num)
 
