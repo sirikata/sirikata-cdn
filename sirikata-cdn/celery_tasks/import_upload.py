@@ -1,6 +1,8 @@
 import collada as coll
 from celery.task import task
+from celery.execute import send_task
 import cassandra_storage.cassandra_util as cass
+from content.utils import save_file_data
 from StringIO import StringIO
 import Image
 import zipfile
@@ -39,23 +41,6 @@ class ImageError(Exception):
     def __init__(self, filename, *args, **kwargs):
         super(ImageError,self).__init__(filename, *args, **kwargs)
         self.filename = filename
-
-def save_file_data(hash, data, mimetype):
-    cf = cass.getColumnFamily("Files")
-    
-    try:
-        rec = cass.getRecord(cf, hash, columns=[])
-        #already exists so return
-        return
-    except cass.NotFoundError:
-        pass
-    except cass.DatabaseError:
-        raise DatabaseError()
-    
-    try:
-        rec = cass.insertRecord(cf, hash, columns={"data": data, "mimetype": mimetype})
-    except cass.DatabaseError:
-        raise DatabaseError()
 
 def save_file_name(path, version_num, hash_key, length):
     cf = cass.getColumnFamily("Names")
@@ -241,7 +226,8 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
         img.path = "./%s" % base_name
         img.save()
         img_hex_key = hashlib.sha256(subfile_data[base_name]).hexdigest()
-        save_file_data(img_hex_key, subfile_data[base_name], "image/%s" % image_objs[base_name].format.lower())
+        try: save_file_data(img_hex_key, subfile_data[base_name], "image/%s" % image_objs[base_name].format.lower())
+        except: raise DatabaseError()
         img_path = "%s/%s/%s" % (path, current_prefix, base_name)
         img_len = len(subfile_data[base_name])
         img_version_num = get_new_version_from_path(img_path, file_type="image")
@@ -252,8 +238,13 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     collada_obj.root.write(str_buffer)
     orig_save_data = str_buffer.getvalue()
     orig_hex_key = hashlib.sha256(orig_save_data).hexdigest()
-    save_file_data(orig_hex_key, orig_save_data, "application/xml")
+    try: save_file_data(orig_hex_key, orig_save_data, "application/xml")
+    except: raise DatabaseError()
     save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),
                       subfile_names, title, description, "original")
 
-    return "%s/%s" % (path, new_version_num)
+    path_with_vers = "%s/%s" % (path, new_version_num)
+
+    send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[path_with_vers, "original"])
+    
+    return path_with_vers

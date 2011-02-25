@@ -34,6 +34,11 @@
     <div>
         <p>
             <div class="pagelet">
+            {% if props.thumbnail and props.screenshot %}
+            <a href="{% url content.views.download props.screenshot %}">
+            <img alt="Click for larger version" class="thumbnail" src="{% url content.views.download props.thumbnail %}"/>
+            </a>
+            {% endif %}
             <table>
             <thead><th colspan="2">File Info</th></thead>
             <tr><td class="label">Hash</td><td><a href="{% url content.views.download props.hash %}">{{ props.hash }}</a></td></tr>

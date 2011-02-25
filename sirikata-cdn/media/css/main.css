@@ -204,3 +204,12 @@ img.maxwidth {
     max-width: 400px;
     width: expression(this.width > 400 ? 400: true);
 }
+
+div#type_accordian img.thumbnail {
+	margin-bottom: 15px;
+	padding: 2px;
+	border: 1px solid #cccccc;
+}
+div#type_accordian img:hover.thumbnail {
+    border: 1px solid #000000;
+}
