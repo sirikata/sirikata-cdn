@@ -2,6 +2,8 @@ from django.conf.urls.defaults import *
 from django.conf import settings
 
 urlpatterns = patterns('',
+    (r'^view/(?P<filename>[\w\-\./]+)$', 'content.views.view'),
+    (r'^download/(?P<hash>[a-z0-9]{64})$', 'content.views.download'),
     (r'^upload/$', 'content.views.upload'),
     (r'^upload/(?P<task_id>[\w\-]+)$', 'content.views.upload'),
     (r'^upload/choice/(?P<task_id>[\w\-]+)$', 'content.views.upload_choice'),

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}{{ block.super }} | File View{% endblock title %}
+
+{% block js_includes %}
+{{ block.super }}
+<script type="text/javascript"> 
+    $(document).ready(function() {
+        $( "#img_accordian" ).accordion({
+            fillSpace: true,
+            autoHeight: false
+        });
+    });
+</script>
+{% endblock js_includes %} 
+
+{% block main_content %}
+
+<div class="pagelet">
+<h2>{{ basename }}</h2>
+<table>
+<thead><th colspan="2">File Info</th></thead>
+<tr><td class="label">Hash</td><td><a href="{% url content.views.download metadata.hash %}">{{ metadata.hash }}</a></td></tr>
+<tr><td class="label">Size</td><td>{{ metadata.size|filesizeformat }}</td></tr>
+</table>
+</div>
+<img class="maxwidth" src="{% url content.views.download metadata.hash %}"/>
+
+{% endblock main_content %}

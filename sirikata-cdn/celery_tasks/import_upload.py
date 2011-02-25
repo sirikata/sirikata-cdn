@@ -40,7 +40,7 @@ class ImageError(Exception):
         super(ImageError,self).__init__(filename, *args, **kwargs)
         self.filename = filename
 
-def save_file_data(hash, data):
+def save_file_data(hash, data, mimetype):
     cf = cass.getColumnFamily("Files")
     
     try:
@@ -53,7 +53,7 @@ def save_file_data(hash, data):
         raise DatabaseError()
     
     try:
-        rec = cass.insertRecord(cf, hash, columns={"data": data})
+        rec = cass.insertRecord(cf, hash, columns={"data": data, "mimetype": mimetype})
     except cass.DatabaseError:
         raise DatabaseError()
 
@@ -69,21 +69,31 @@ def save_file_name(path, version_num, hash_key, length):
     except cass.DatabaseError:
         raise DatabaseError()
 
-def save_version_type(path, version_num, hash_key, length, subfile_names, type_id):
+def save_version_type(path, version_num, hash_key, length, subfile_names, title, description, type_id):
     cf = cass.getColumnFamily("Names")
     
     try:
         rec = cass.getRecord(cf, path, columns=[version_num])
-        type_dict = json.loads(rec[version_num])
+        version_dict = json.loads(rec[version_num])
     except cass.NotFoundError:
-        type_dict = {}
+        version_dict = {}
     except cass.DatabaseError:
         raise DatabaseError()
     
-    type_dict[type_id] = {'hash': hash_key, 'size': length, 'subfiles': subfile_names}
+    if 'types' not in version_dict:
+        version_dict['types'] = {}
+    
+    if 'title' not in version_dict:
+        version_dict['title'] = title
+    if 'description' not in version_dict:
+        version_dict['description'] = description
+    
+    version_dict['types'][type_id] = {'hash': hash_key,
+                                      'size': length,
+                                      'subfiles': subfile_names}
     
     try:
-        cass.insertRecord(cf, path, columns={version_num: json.dumps(type_dict)})
+        cass.insertRecord(cf, path, columns={version_num: json.dumps(version_dict)})
     except cass.DatabaseError:
         raise DatabaseError()
 
@@ -231,7 +241,7 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
         img.path = "./%s" % base_name
         img.save()
         img_hex_key = hashlib.sha256(subfile_data[base_name]).hexdigest()
-        save_file_data(img_hex_key, subfile_data[base_name])
+        save_file_data(img_hex_key, subfile_data[base_name], "image/%s" % image_objs[base_name].format.lower())
         img_path = "%s/%s/%s" % (path, current_prefix, base_name)
         img_len = len(subfile_data[base_name])
         img_version_num = get_new_version_from_path(img_path, file_type="image")
@@ -242,7 +252,8 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     collada_obj.root.write(str_buffer)
     orig_save_data = str_buffer.getvalue()
     orig_hex_key = hashlib.sha256(orig_save_data).hexdigest()
-    save_file_data(orig_hex_key, orig_save_data)
-    save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data), subfile_names, "original")
+    save_file_data(orig_hex_key, orig_save_data, "application/xml")
+    save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),
+                      subfile_names, title, description, "original")
 
     return "%s/%s" % (path, new_version_num)

@@ -1,7 +1,7 @@
 from django.template import RequestContext
 from django.shortcuts import render_to_response, redirect
 from django import forms
-from django.http import HttpResponseServerError, HttpResponseForbidden
+from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.core.urlresolvers import reverse
@@ -9,6 +9,8 @@ import re
 
 from users.middleware import save_upload_task, get_pending_upload, \
                              remove_pending_upload, save_file_upload
+
+from content.utils import get_file_metadata, get_hash
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
@@ -293,3 +295,19 @@ def upload_import(request, task_id):
                    'task_id': task_id,
                    'filename': filename}
     return render_to_response('content/import.html', view_params, context_instance = RequestContext(request))
+
+def view(request, filename):
+    file_metadata = get_file_metadata("/%s" % filename)
+    view_params = {'metadata': file_metadata}
+    view_params['basename'] = filename.split("/")[-2:][0]
+    if file_metadata['type'] == 'image':
+        html_page = 'content/view_image.html'
+    else:
+        html_page = 'content/view.html'
+    return render_to_response(html_page, view_params, context_instance = RequestContext(request))
+
+def download(request, hash):
+    rec = get_hash(hash)
+    data = rec['data']
+    mime = rec['mimetype']
+    return HttpResponse(data, mimetype=mime)

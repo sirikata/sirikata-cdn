@@ -180,6 +180,9 @@ div.pagelet td {
 .italic {
     font-style: italic;
 }
+.bold {
+	font-weight: bold;
+}
 
 ul#messages li.info {
 	font-weight: bold;
@@ -195,4 +198,9 @@ span.path_name {
     font-size: 0.9em;
     font-weight: bold;
     font-family: Courier New, Courier;
+}
+
+img.maxwidth {
+    max-width: 400px;
+    width: expression(this.width > 400 ? 400: true);
 }

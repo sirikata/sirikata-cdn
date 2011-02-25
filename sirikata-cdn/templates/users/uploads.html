@@ -2,19 +2,11 @@
 
 {% block title %}{{ block.super }} | My Uploads{% endblock title %}
 
-{% block css_includes %}
-{{ block.super }}
-<style type="text/css">
-.ui-widget { font-size: 0.8em; }
-</style>
-{% endblock css_includes %}
-
 {% block js_includes %}
 {{ block.super }}
 <script type="text/javascript"> 
     $(document).ready(function() {
     	$("#upload_tabs").tabs();
-    	//$("#tabs > ul").tabs();
     	$("#upload_tabs").bind("tabsshow", function(event, ui) { 
     	    window.location.hash = ui.tab.hash;
     	})
@@ -33,7 +25,7 @@
         {% if uploaded %}
             {% for up in uploaded %}
                 <li>{{ up.timestamp|date:"M-d-Y g:iA" }} -
-                <a href="">{{ up.path }}</a></li>
+                <a href="{% url content.views.view up.path|slice:"1:" %}">{{ up.path }}</a></li>
             {% endfor %}
         {% else %}
             <span class="italic">You don't have any uploads</span>
