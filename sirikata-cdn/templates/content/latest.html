@@ -3,5 +3,15 @@
 {% block title %}{{ block.super }} | Latest Content{% endblock title %}
 
 {% block main_content %}
-Latest content will go here.
+<ul>
+{% for item in content_items %}
+    <li><img class="thumbnail" src="{% url content.views.download item.metadata.types.original.thumbnail %}"/>
+    {{ item.timestamp|timesince }} ago <br>
+    {{ item.username }} <br>
+    {{ item.metadata.title }}
+    </li>
+{% empty %}
+    <li>Sorry, no content!</li>
+{% endfor %}
+</ul>
 {% endblock main_content %}

@@ -85,7 +85,24 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, title,
         raise DatabaseError()
 
     try:
-        cass.insertRecord(time_index_cf, "%s:%s/%s" % (str(int(time.time())), path, version_num), {'x':''} )
+        index_rows = cass.getRecord(time_index_cf, "index_rows", columns=['0'])
+    except cass.NotFoundError:
+        index_rows = None
+    except cass.DatabaseError:
+        raise DatabaseError()
+    
+    if index_rows is None:
+        try:
+            cass.insertRecord(time_index_cf, "index_rows", columns={"0": "0"})
+        except cass.DatabaseError:
+            raise DatabaseError()
+        cur_index_row = "0"
+    else:
+        print index_rows
+        cur_index_row = index_rows[0].split(",")[-1]
+
+    try:
+        cass.insertRecord(time_index_cf, cur_index_row, {long(time.time() * 1e6) : "%s/%s" % (path, version_num)})
     except cass.DatabaseError:
         raise DatabaseError()
 

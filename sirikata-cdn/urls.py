@@ -17,7 +17,7 @@ urlpatterns = patterns('',
     (r'^login/openid_link$', 'users.views.openid_link'),
     (r'^login/$', 'users.views.login'),
     (r'^logout/$', 'users.views.logout'),
-    (r'^$', 'content.views.index'),
+    (r'^$', 'content.views.latest'),
 )
 
 if settings.DEBUG:

@@ -37,7 +37,7 @@ class Command(NoArgsCommand):
         sys.alter_column('SirikataCDN', 'Names', 'type', UTF8_TYPE)
         sys.alter_column('SirikataCDN', 'Names', 'latest', UTF8_TYPE)
         
-        sys.create_column_family('SirikataCDN', 'NameTimestampIndex', comparator_type=UTF8_TYPE)
+        sys.create_column_family('SirikataCDN', 'NameTimestampIndex', comparator_type=LONG_TYPE)
         
         sys.create_column_family('SirikataCDN', 'Files', comparator_type=BYTES_TYPE)
         

@@ -12,14 +12,14 @@ def get_pending_uploads(username):
     except DatabaseError:
         return []
 
-    records = []    
-    for p in pending_range:
-        for colkey, value in p[1].iteritems():
-            task_id = colkey.split(":")[1]
-            values = json.loads(value[0])
-            values['task_id'] = task_id
-            values['timestamp'] = datetime.datetime.fromtimestamp(value[1] / 1000000L)
-            records.append(values)
+    records = []
+    
+    for colkey, (value, timestamp) in pending_range.iteritems():
+        task_id = colkey.split(":")[1]
+        values = json.loads(value)
+        values['task_id'] = task_id
+        values['timestamp'] = datetime.datetime.fromtimestamp(timestamp / 1e6)
+        records.append(values)
     
     records = sorted(records, key=operator.itemgetter("timestamp"), reverse=True)
     
@@ -33,12 +33,11 @@ def get_uploads(username):
         return []
 
     records = []    
-    for p in upload_range:
-        for colkey, value in p[1].iteritems():
-            values = {}
-            values['path'] = colkey.split(":")[1]
-            values['timestamp'] = datetime.datetime.fromtimestamp(value[1] / 1000000L)
-            records.append(values)
+    for colkey, (value, timestamp) in upload_range.iteritems():
+        values = {}
+        values['path'] = colkey.split(":")[1]
+        values['timestamp'] = datetime.datetime.fromtimestamp(timestamp / 1e6)
+        records.append(values)
     
     records = sorted(records, key=operator.itemgetter("timestamp"), reverse=True)
     

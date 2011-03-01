@@ -37,12 +37,26 @@ def getRecord(cf, rowkey, columns=None):
         raise TimedOutError('Request for record %s timed out' % (rowkey,))
     except UnavailableException:
         raise UnavailableError('Record %s was unavailable' % (rowkey,))
-
-def getColRange(cf, rowkey, column_start, column_finish, include_timestamp=False):
+    
+def multiGetRecord(cf, keys, columns=None):
     try:
-        return cf.get_range(start=rowkey, finish=rowkey, 
-                            column_start=column_start, column_finish=column_finish,
-                            include_timestamp=include_timestamp)
+        return cf.multiget(keys, columns=columns)
+    except NotFoundException:
+        raise NotFoundError('Record %s not found' % (rowkey,))
+    except InvalidRequestException:
+        raise InvalidRequestError('Invalid request for record %s' % (rowkey))
+    except TimedOutException:
+        raise TimedOutError('Request for record %s timed out' % (rowkey,))
+    except UnavailableException:
+        raise UnavailableError('Record %s was unavailable' % (rowkey,))
+
+def getColRange(cf, rowkey, column_start, column_finish, include_timestamp=False,
+                column_reversed=False, column_count=100):
+    try:
+        return cf.get(rowkey, 
+                      column_start=column_start, column_finish=column_finish,
+                      include_timestamp=include_timestamp, column_count=column_count,
+                      column_reversed=column_reversed)
     except NotFoundException:
         raise NotFoundError('Record %s not found' % (rowkey,))
     except InvalidRequestException:

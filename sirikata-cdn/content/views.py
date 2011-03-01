@@ -10,7 +10,7 @@ import re
 from users.middleware import save_upload_task, get_pending_upload, \
                              remove_pending_upload, save_file_upload
 
-from content.utils import get_file_metadata, get_hash
+from content.utils import get_file_metadata, get_hash, get_content_by_date
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
@@ -19,8 +19,10 @@ from celery_tasks import app
 from celery.execute import send_task
 from celery.result import AsyncResult
 
-def index(request):
-    return render_to_response('content/latest.html', {}, context_instance = RequestContext(request))
+def latest(request):
+    content_items, next_start = get_content_by_date()
+    view_params = {'content_items': content_items, 'next_start': next_start}
+    return render_to_response('content/latest.html', view_params, context_instance = RequestContext(request))
 
 
 class UploadChoiceForm(forms.Form):
@@ -289,7 +291,7 @@ def upload_import(request, task_id):
             return redirect('content.views.upload_processing', task_id=task.task_id)
             
     else:
-        form = UploadImport(initial={'path':filename_base, 'title':filename_base.capitalize()})
+        form = UploadImport(initial={'path':filename, 'title':filename_base.capitalize()})
     
     view_params = {'form': form,
                    'task_id': task_id,
