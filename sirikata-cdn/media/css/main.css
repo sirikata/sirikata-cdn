@@ -80,6 +80,7 @@ div#footer {
     border-right: 1px solid #999999;
     border-left: 1px solid #999999;
     border-bottom: 1px solid #999999;
+    clear: left;
 }
 div#footer h3 {
     margin: 0;
@@ -205,11 +206,50 @@ img.maxwidth {
     width: expression(this.width > 400 ? 400: true);
 }
 
-img.thumbnail {
+div#type_accordian img.thumbnail {
 	margin-bottom: 15px;
 	padding: 2px;
 	border: 1px solid #cccccc;
 }
-img:hover.thumbnail {
+div#type_accordian img:hover.thumbnail {
     border: 1px solid #000000;
+}
+
+ul.content_list {
+	margin: 0;
+	padding: 0;
+}
+ul.content_list li {
+	margin: 0;
+	padding: 0;
+    width: 160px;
+    height: 160px;
+    list-style-type: none;
+    word-wrap: break-word;
+    overflow-y: hidden;
+    display: inline-block;
+    vertical-align: top;
+    padding: 5px 1px;
+}
+ul.content_list div.img_container {
+    margin: 0;
+    padding: 0;
+    width: 96px;
+    height: 96px;
+    position: relative;
+}
+ul.content_list img {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    bottom: 0;
+    position: absolute;
+}
+ul.content_list span.title {
+	font-size: 0.8em;
+	font-weight: bold;
+}
+ul.content_list span.timeago {
+    font-size: 0.8em;
+    font-style: italic;
 }

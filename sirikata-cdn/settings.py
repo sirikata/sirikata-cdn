@@ -74,7 +74,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'cassandra_storage',
     'users',
-    'content'
+    'content',
+    'custom_template_tags'
 )
 
 #Unused

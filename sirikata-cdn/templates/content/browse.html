@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load truncate_filters_extra %}
+
+{% block title %}{{ block.super }} | Latest Content{% endblock title %}
+
+{% block main_content %}
+<ul class="content_list">
+{% for item in content_items %}
+    <li>
+    <div class="img_container">
+    <a href="{% url content.views.view item.full_path|slice:"1:" %}">
+    {% if item.metadata.types.original.thumbnail %}
+    <img src="{% url content.views.download item.metadata.types.original.thumbnail %}"/>
+    {% else %}
+    <img src="{{ MEDIA_URL }}images/question.png"/>
+    {% endif %}
+    </a>
+    </div>
+    <a href="{% url content.views.view item.full_path|slice:"1:" %}">
+    <span class="title">{{ item.metadata.title|truncate_chars:15 }}</span>
+    </a><br>
+    <span class="timeago">{{ item.timestamp|timesince }} ago </span><br>
+    {{ item.username }} <br>
+    </li>
+{% empty %}
+    <li>No content!</li>
+{% endfor %}
+</ul>
+
+{% if next_start %}
+<br>
+<a href="{% url content.views.browse next_start %}">Older</a>
+{% endif %}
+
+{% endblock main_content %}

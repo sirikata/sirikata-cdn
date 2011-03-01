@@ -36,7 +36,8 @@ def get_content_by_date(start="", limit=25):
         content_items.append({'timestamp': datetime.datetime.fromtimestamp(timestamp / 1e6),
                                'version_num': version_num,
                                'base_path': base_path,
-                               'username': username})
+                               'username': username,
+                               'full_path': "%s/%s" % (base_path, version_num)})
     
     #TODO: This sucks. There is no way to issue a set of (rowkey, [columns]) to multiget
     # Instead, this is getting EVERY column, even though we only need the individual version

@@ -23,7 +23,7 @@ def login(request):
 
 def logout(request):
     logout_user(request)
-    return redirect('content.views.latest')
+    return redirect('content.views.browse', '')
 
 def openid_select(request):
     oidutil.log = dummyOpenIdLoggingFunction
@@ -76,7 +76,7 @@ def openid_return(request):
         return redirect('users.views.login')
     
     if login_with_openid_identity(request, response.identity_url):
-        return redirect('content.views.latest')
+        return redirect('content.views.browse', '')
     
     ax_resp = ax.FetchResponse.fromSuccessResponse(response)
     if not ax_resp:
@@ -146,7 +146,7 @@ def openid_link(request):
                 messages.error(request, 'Could not associate username. This usually means the username is already taken')
                 view_params = {'form':form, 'openid_identity':openid_identity}
             else:
-                return redirect('content.views.latest')
+                return redirect('content.views.browse', '')
         else:
             view_params = {'form':form, 'openid_identity':openid_identity}
     else:

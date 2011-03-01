@@ -2,7 +2,7 @@ import pycassa
 from pycassa.cassandra.ttypes import NotFoundException, InvalidRequestException
 from pycassa.cassandra.ttypes import TimedOutException, UnavailableException
 
-POOL = pycassa.connect('SirikataCDN')
+POOL = pycassa.pool.ConnectionPool('SirikataCDN', timeout=20, framed_transport=True, max_retries=5)
 
 class DatabaseError(Exception):
     """

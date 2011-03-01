@@ -5,6 +5,7 @@ from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResp
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.core.urlresolvers import reverse
+from django.utils import simplejson
 import re
 
 from users.middleware import save_upload_task, get_pending_upload, \
@@ -19,10 +20,10 @@ from celery_tasks import app
 from celery.execute import send_task
 from celery.result import AsyncResult
 
-def latest(request):
-    content_items, next_start = get_content_by_date()
+def browse(request, start=""):
+    content_items, next_start = get_content_by_date(start=start)
     view_params = {'content_items': content_items, 'next_start': next_start}
-    return render_to_response('content/latest.html', view_params, context_instance = RequestContext(request))
+    return render_to_response('content/browse.html', view_params, context_instance = RequestContext(request))
 
 
 class UploadChoiceForm(forms.Form):
@@ -40,12 +41,12 @@ def upload_choice(request, task_id):
     try:
         upload_rec = get_pending_upload(request.session['username'], task_id)
     except:
-        return HttpResponseForbidden
+        return HttpResponseForbidden()
     res = AsyncResult(task_id)
     if res.state == "FAILURE" and type(res.result).__name__ == "TooManyDaeFound":
         names = res.result.names
     else:
-        return HttpResponseForbidden
+        return HttpResponseForbidden()
     
     if request.method == 'POST':
         form = UploadChoiceForm(task_id, names, request.POST)
@@ -94,7 +95,7 @@ def upload(request, task_id=None):
         try:
             upload_rec = get_pending_upload(request.session['username'], task_id)
         except:
-            return HttpResponseForbidden
+            return HttpResponseForbidden()
         orig_name = upload_rec['filename']
         subfiles_uploaded = upload_rec['subfiles']
         existing_files = subfiles_uploaded.keys()
@@ -103,7 +104,7 @@ def upload(request, task_id=None):
         if res.state == "FAILURE" and type(res.result).__name__ == "SubFilesNotFound":
             names = res.result.names
         else:
-            return HttpResponseForbidden
+            return HttpResponseForbidden()
     
     if request.method == 'POST':
         if task_id:
@@ -167,12 +168,24 @@ def upload_processing(request, task_id='', action=False):
     try:
         upload_rec = get_pending_upload(request.session['username'], task_id)
     except:
-        return HttpResponseForbidden
+        return HttpResponseForbidden()
     
     res = AsyncResult(task_id)
     
+    xhr = request.GET.has_key('xhr')
+    if xhr:
+        json_result = {'state':res.state}
+        return HttpResponse(simplejson.dumps(json_result), mimetype='application/json')
+    
     if action == 'confirm':
         if upload_rec['task_name'] == 'import_upload':
+            try:
+                remove_pending_upload(request.session['username'], task_id)
+            except:
+                return HttpResponseServerError("There was an error removing your upload record.")
+            messages.info(request, 'Upload removed')
+            return redirect('users.views.uploads')
+        elif res.state == "FAILURE":
             try:
                 remove_pending_upload(request.session['username'], task_id)
             except:
@@ -215,6 +228,9 @@ def upload_processing(request, task_id='', action=False):
         elif type(res.result).__name__ == "SubFilesNotFound":
             error_message = "There were dependencies of the collada file not found in the file uploaded. Click 'Continue' to upload them."
             edit_link = reverse('content.views.upload', args=[task_id])
+        else:
+            error_message = "An unknown error has occurred."
+            erase = True
     elif res.state == "SUCCESS":
         if upload_rec['task_name'] == 'import_upload':
             success_message = "File was processed successfully. Click 'Continue' to add information to the file."
@@ -256,11 +272,11 @@ def upload_import(request, task_id):
     try:
         upload_rec = get_pending_upload(request.session['username'], task_id)
     except:
-        return HttpResponseForbidden
+        return HttpResponseForbidden()
 
     res = AsyncResult(task_id)
     if res.state != "SUCCESS":
-        return HttpResponseForbidden
+        return HttpResponseForbidden()
 
     filename = upload_rec['filename']
     filename_base = filename.split(".")[0]

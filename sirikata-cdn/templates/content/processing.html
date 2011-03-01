@@ -5,14 +5,37 @@
 {% block js_includes %}
 {{ block.super }}
 <script type="text/javascript"> 
+
+	function ajaxLater() {
+		var status_url = window.location.pathname + '?xhr';
+        $.ajax({ url: status_url, dataType: 'text json' })
+            .success(function(data, textStatus, jqXHR) {
+                if (data.state == 'SUCCESS' || data.state == 'FAILURE') {
+                	location.reload();
+                } else {
+                	$("#current_task_state").html(data.state);
+                }
+                setTimeout(ajaxLater, 1000);
+            })
+            .error(function(jqXHR, textStatus, errorThrown) {
+            	setTimeout(ajaxLater, 5000);
+            })
+            .complete(function(jqXHR, textStatus) {});
+	}
+
     $(document).ready(function() {
     	{% if erase %}
         $('#ok_erase_button').button();
         {% else %}{% if edit_link %}
         $('#edit_button').button();
         {% else %}
-        $('#refresh_button').button();
+        $('#refresh_button').hide();
         {% endif %}{% endif %}
+        
+        var cur_state = '{{ task_state }}';
+        if (cur_state != 'SUCCESS' && cur_state != 'FAILURE') {
+        	setTimeout(ajaxLater, 1000);
+        }
     });
 </script>
 {% endblock js_includes %} 
@@ -31,7 +54,7 @@
 {% if success_message %}
 <tr><td class="label">Message</td><td>{{ success_message }}</td></tr>
 {% endif %}
-<tr><td class="label">State</td><td>{{ task_state }}</td></tr>
+<tr><td class="label">State</td><td id='current_task_state'>{{ task_state }}</td></tr>
 </table>
 
 <table>

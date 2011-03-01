@@ -263,8 +263,10 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     orig_save_data = str_buffer.getvalue()
     orig_hex_key = hashlib.sha256(orig_save_data).hexdigest()
     
+    print orig_hex_key
+    print len(orig_save_data)
     try: save_file_data(orig_hex_key, orig_save_data, "application/xml")
-    except: raise DatabaseError()
+    except: raise
     
     zip_buffer = StringIO()
     combined_zip = zipfile.ZipFile(zip_buffer, mode='w', compression=zipfile.ZIP_DEFLATED)

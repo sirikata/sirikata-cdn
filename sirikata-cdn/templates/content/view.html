@@ -21,7 +21,7 @@
     <h3><a href="#">{{ metadata.title }}</a></h3>
     <div>
         <p class="bold">
-        {{ metadata.description|linebreaksbr }}
+        {{ metadata.description|linebreaksbr|default:"<em>No description</em>" }}
         </p>
     </div>
 </div>

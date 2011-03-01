@@ -19,14 +19,15 @@
     <ul>
         <li><a href="#Uploaded">Uploaded ({{ uploaded|length }})</a></li>
         <li><a href="#Pending">Pending ({{ pending|length }})</a></li>
-        <li><a href="#Favorites">Favorites ({{ favorites|length }})</a></li>
     </ul>
     <div id="Uploaded">
         {% if uploaded %}
+            <ul>
             {% for up in uploaded %}
                 <li>{{ up.timestamp|date:"M-d-Y g:iA" }} -
                 <a href="{% url content.views.view up.path|slice:"1:" %}">{{ up.path }}</a></li>
             {% endfor %}
+            </ul>
         {% else %}
             <span class="italic">You don't have any uploads</span>
         {% endif %}
@@ -42,15 +43,6 @@
 	        </ul>
         {% else %}
             <span class="italic">You don't have any pending uploads</span>
-        {% endif %}
-    </div>
-    <div id="Favorites">
-        {% if favorites %}
-            {% for up in favorites %}
-                
-            {% endfor %}
-        {% else %}
-            <span class="italic">You don't have any favorite uploads</span>
         {% endif %}
     </div>
 </div>
