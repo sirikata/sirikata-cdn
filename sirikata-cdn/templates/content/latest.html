@@ -5,7 +5,12 @@
 {% block main_content %}
 <ul>
 {% for item in content_items %}
-    <li><img class="thumbnail" src="{% url content.views.download item.metadata.types.original.thumbnail %}"/>
+    <li>
+    {% if item.metadata.types.original.thumbnail %}
+    <img class="thumbnail" src="{% url content.views.download item.metadata.types.original.thumbnail %}"/>
+    {% else %}
+    <img class="thumbnail" src="{{ MEDIA_URL }}images/question.png"/>
+    {% endif %}
     {{ item.timestamp|timesince }} ago <br>
     {{ item.username }} <br>
     {{ item.metadata.title }}
