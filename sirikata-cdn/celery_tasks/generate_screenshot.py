@@ -18,6 +18,7 @@ def _generate_screenshot(filename, typeid):
     from panda3d.core import GeomVertexData
     from panda3d.core import GeomVertexWriter
     from panda3d.core import GeomTriangles
+    from panda3d.core import GeomLines
     from panda3d.core import Geom
     from panda3d.core import GeomNode
     from panda3d.core import PNMImage
@@ -139,9 +140,8 @@ def _generate_screenshot(filename, typeid):
             normal = GeomVertexWriter(vdata, 'normal')
             texcoord = GeomVertexWriter(vdata, 'texcoord')
             
-            numtris = 0
-            
             if type(prim) is collada.triangleset.BoundTriangleSet:
+                numtris = 0
                 for tri in prim.triangles():
                     for tri_pt in range(3):
                         vertex.addData3f(tri.vertices[tri_pt][0], tri.vertices[tri_pt][1], tri.vertices[tri_pt][2])
@@ -150,7 +150,13 @@ def _generate_screenshot(filename, typeid):
                             texcoord.addData2f(tri.texcoords[0][tri_pt][0], tri.texcoords[0][tri_pt][1])
                     numtris+=1
                     
+                gprim = GeomTriangles(Geom.UHStatic)
+                for i in range(numtris):
+                    gprim.addVertices(i*3, i*3+1, i*3+2)
+                    gprim.closePrimitive()
+                    
             elif type(prim) is collada.polylist.BoundPolygonList:
+                numtris = 0
                 for poly in prim.polygons():
                     for tri in poly.triangles():
                         for tri_pt in range(3):
@@ -160,13 +166,25 @@ def _generate_screenshot(filename, typeid):
                                 texcoord.addData2f(tri.texcoords[0][tri_pt][0], tri.texcoords[0][tri_pt][1])
                         numtris+=1
     
+                gprim = GeomTriangles(Geom.UHStatic)
+                for i in range(numtris):
+                    gprim.addVertices(i*3, i*3+1, i*3+2)
+                    gprim.closePrimitive()
+                    
+            elif type(prim) is collada.lineset.BoundLineSet:
+                numlines = 0
+                for line in prim.lines():
+                    for line_pt in range(2):
+                        vertex.addData3f(line.vertices[line_pt][0], line.vertices[line_pt][1], line.vertices[line_pt][2])
+                    numlines+=1
+    
+                gprim = GeomLines(Geom.UHStatic)
+                for i in range(numlines):
+                    gprim.addVertices(i*2, i*2+1)
+                    gprim.closePrimitive()
+    
             else:
                 raise Exception("Error: Unsupported primitive type. Exiting.")
-            
-            gprim = GeomTriangles(Geom.UHStatic)
-            for i in range(numtris):
-                gprim.addVertices(i*3, i*3+1, i*3+2)
-                gprim.closePrimitive()
                 
             pgeom = Geom(vdata)
             pgeom.addPrimitive(gprim)
