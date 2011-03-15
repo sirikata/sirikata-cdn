@@ -335,9 +335,28 @@ def download(request, hash, filename=None):
     if request.method == 'HEAD':
         response = HttpResponse(mimetype=mime)
     else:
+        rangedresponse = False
+        if 'HTTP_RANGE' in request.META:
+            range = request.META['HTTP_RANGE']
+            parts = range.split('=')
+            if len(parts) == 2:
+                parts = parts[1].split('-')
+                if len(parts) == 2:
+                    try:
+                        start = int(parts[0])
+                        end = int(parts[1])
+                        rangeheader = "bytes %d-%d/%d" % (start, end, len(data))
+                        end += 1
+                        if start >= 0 and end > 0 and \
+                            start < end and end <= len(data):
+                            rangedresponse = True
+                            data = data[start:end]
+                    except ValueError: pass
         response = HttpResponse(data, mimetype=mime)
+        if rangedresponse:
+            response['Content-Range'] = rangeheader
+            response['Accept-Ranges'] = 'bytes'
     response['Content-Length'] = str(len(data))
-    response['Connection'] = 'close'
     return response
 
 def dns(request, filename):
