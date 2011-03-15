@@ -65,6 +65,9 @@ def get_file_metadata(filename):
     except DatabaseError:
         raise
     
+    if version not in rec:
+        raise NotFoundError("Given file version not found")
+    
     version_data = json.loads(rec[version])
     version_data['type'] = rec['type']
     return version_data

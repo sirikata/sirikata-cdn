@@ -3,6 +3,7 @@ from django.conf import settings
 
 urlpatterns = patterns('',
     (r'^view/(?P<filename>[\w\-\./]+)$', 'content.views.view'),
+    (r'^dns/(?P<filename>[\w\-\./]+)$', 'content.views.dns'),
     (r'^download/(?P<hash>[a-z0-9]{64})$', 'content.views.download'),
     (r'^download/(?P<hash>[a-z0-9]{64})/(?P<filename>[\w\-\./]+)$', 'content.views.download'),
     (r'^upload/$', 'content.views.upload'),

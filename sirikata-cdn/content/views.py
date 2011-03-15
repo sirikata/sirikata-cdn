@@ -1,12 +1,14 @@
 from django.template import RequestContext
 from django.shortcuts import render_to_response, redirect
 from django import forms
-from django.http import HttpResponseServerError, HttpResponseForbidden, HttpResponse
+from django.http import HttpResponseServerError, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.utils import simplejson
 import re
+from cassandra_storage.cassandra_util import NotFoundError
 
 from users.middleware import save_upload_task, get_pending_upload, \
                              remove_pending_upload, save_file_upload
@@ -325,7 +327,38 @@ def view(request, filename):
     return render_to_response(html_page, view_params, context_instance = RequestContext(request))
 
 def download(request, hash, filename=None):
-    rec = get_hash(hash)
+    try: rec = get_hash(hash)
+    except NotFoundError: return HttpResponseNotFound()
+    except: return HttpResponseServerError()
     data = rec['data']
     mime = rec['mimetype']
-    return HttpResponse(data, mimetype=mime)
+    if request.method == 'HEAD':
+        response = HttpResponse(mimetype=mime)
+    else:
+        response = HttpResponse(data, mimetype=mime)
+    response['Content-Length'] = str(len(data))
+    response['Connection'] = 'close'
+    return response
+
+def dns(request, filename):
+    parts = filename.split("/")
+    if len(parts) < 3:
+        return HttpResponseBadRequest()
+    base_path = "/".join(parts[:-2])
+    type_id = parts[-2]
+    version_num = parts[-1]
+
+    try: file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
+    except NotFoundError: return HttpResponseNotFound()
+    except: return HttpResponseServerError()
+    
+    if type_id not in file_metadata['types']:
+        return HttpResponseNotFound()
+    
+    if request.method == 'HEAD':
+        response = HttpResponse()
+        response['Hash'] = file_metadata['types'][type_id]['hash']
+        response['File-Size'] = file_metadata['types'][type_id]['size']
+        return response
+    else:
+        return HttpResponseBadRequest()
