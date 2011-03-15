@@ -7,6 +7,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.utils import simplejson
+from django.utils.decorators import decorator_from_middleware
+from django.middleware.gzip import GZipMiddleware
 import re
 from cassandra_storage.cassandra_util import NotFoundError
 
@@ -326,6 +328,7 @@ def view(request, filename):
         html_page = 'content/view.html'
     return render_to_response(html_page, view_params, context_instance = RequestContext(request))
 
+@decorator_from_middleware(GZipMiddleware)
 def download(request, hash, filename=None):
     try: rec = get_hash(hash)
     except NotFoundError: return HttpResponseNotFound()
