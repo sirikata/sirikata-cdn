@@ -326,7 +326,12 @@ def upload_import(request, task_id):
 def view(request, filename):
     file_metadata = get_file_metadata("/%s" % filename)
     view_params = {'metadata': file_metadata}
-    view_params['basename'] = filename.split("/")[-2:][0]
+    
+    split = filename.split("/")
+    view_params['version'] = split[-1:][0]
+    view_params['basename'] = split[-2:][0]
+    view_params['basepath'] = "/".join(split[:-1])
+    
     if file_metadata['type'] == 'image':
         html_page = 'content/view_image.html'
     else:
