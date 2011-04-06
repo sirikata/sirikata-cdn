@@ -228,6 +228,8 @@ def import_upload(main_rowkey, subfiles, selected_dae=None):
     
     import_upload.update_state(state="CHECKING_COLLADA")
     get_collada_and_images(zip, dae_zip_name, dae_data, subfiles)
+    
+    return dae_zip_name
 
 @task
 def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None):

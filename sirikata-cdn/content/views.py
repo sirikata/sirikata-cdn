@@ -10,6 +10,7 @@ from django.utils import simplejson
 from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 import re
+import posixpath
 from cassandra_storage.cassandra_util import NotFoundError
 
 from users.middleware import save_upload_task, get_pending_upload, \
@@ -311,7 +312,11 @@ def upload_import(request, task_id):
             return redirect('content.views.upload_processing', task_id=task.task_id)
             
     else:
-        form = UploadImport(initial={'path':filename, 'title':filename_base.capitalize()})
+        if res.result is None:
+            default_filename = filename
+        else:
+            default_filename = res.result
+        form = UploadImport(initial={'path':default_filename, 'title':filename_base.capitalize()})
     
     view_params = {'form': form,
                    'task_id': task_id,
@@ -363,12 +368,16 @@ def download(request, hash, filename=None):
     return response
 
 def dns(request, filename):
-    parts = filename.split("/")
-    if len(parts) < 3:
+    if request.method != 'HEAD':
         return HttpResponseBadRequest()
-    base_path = "/".join(parts[:-2])
-    type_id = parts[-2]
-    version_num = parts[-1]
+    
+    parts = filename.split("/")
+    if len(parts) < 4:
+        return HttpResponseBadRequest()
+    base_path = "/".join(parts[:-3])
+    type_id = parts[-3]
+    version_num = parts[-2]
+    requested_file = parts[-1]
 
     try: file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
     except NotFoundError: return HttpResponseNotFound()
@@ -377,10 +386,24 @@ def dns(request, filename):
     if type_id not in file_metadata['types']:
         return HttpResponseNotFound()
     
-    if request.method == 'HEAD':
-        response = HttpResponse()
-        response['Hash'] = file_metadata['types'][type_id]['hash']
-        response['File-Size'] = file_metadata['types'][type_id]['size']
-        return response
+    if requested_file == posixpath.basename(base_path):
+        hash = file_metadata['types'][type_id]['hash']
+        file_size = file_metadata['types'][type_id]['size']
     else:
-        return HttpResponseBadRequest()
+        subfile_map = {}
+        for subfile in file_metadata['types'][type_id]['subfiles']:
+            (subfile_base, vers) = posixpath.split(subfile)
+            subfile_basename = posixpath.basename(subfile_base)
+            subfile_map[subfile_basename] = subfile
+        
+        if requested_file not in subfile_map:
+            return HttpResponseNotFound()
+        
+        subfile_metadata = get_file_metadata(subfile_map[requested_file])
+        hash = subfile_metadata['hash']
+        file_size = subfile_metadata['size']
+    
+    response = HttpResponse()
+    response['Hash'] = hash
+    response['File-Size'] = file_size
+    return response
