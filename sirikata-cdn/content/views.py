@@ -20,7 +20,6 @@ from content.utils import get_file_metadata, get_hash, get_content_by_date
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
-from celery_tasks import app
 
 from celery.execute import send_task
 from celery.result import AsyncResult
