@@ -207,7 +207,29 @@ def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles):
             im = Image.open(StringIO(image_data))
             im.load()
         except IOError:
-            raise ImageError(image_name)
+            
+            from panda3d.core import Texture
+            from panda3d.core import StringStream
+            from panda3d.core import PNMImage
+            
+            #PIL failed, so lets try DDS reader with panda3d
+            t = Texture(image_name)
+            success = t.readDds(StringStream(image_data))
+            if success == 0:
+                raise ImageError(image_name)
+
+            #convert DDS to PNG
+            myImage = PNMImage()
+            t.store(myImage)
+            outss = StringStream()
+            myImage.write(outss, "out.png")
+            try:
+                im = Image.open(StringIO(outss.getData()))
+                im.load()
+                im.format = 'X-DDS' #total hack
+            except IOError:
+                raise ImageError(image_name)
+
         image_objs[image_name] = im
         
     return (col, subfile_data, image_objs)
