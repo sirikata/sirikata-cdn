@@ -219,12 +219,9 @@ def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles):
                 raise ImageError(image_name)
 
             #convert DDS to PNG
-            myImage = PNMImage()
-            t.store(myImage)
-            outss = StringStream()
-            myImage.write(outss, "out.png")
+            outdata = t.getRamImageAs('RGBA').getData()
             try:
-                im = Image.open(StringIO(outss.getData()))
+                im = Image.fromstring('RGBA', (t.getXSize(), t.getYSize()), outdata)
                 im.load()
                 im.format = 'X-DDS' #total hack
             except IOError:
