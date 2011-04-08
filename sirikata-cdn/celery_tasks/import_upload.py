@@ -218,14 +218,23 @@ def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles):
             if success == 0:
                 raise ImageError(image_name)
 
+            #The below method fails on my fedora install because panda3d doesn't have the squish library
+
             #convert DDS to PNG
-            outdata = t.getRamImageAs('RGBA').getData()
-            try:
-                im = Image.fromstring('RGBA', (t.getXSize(), t.getYSize()), outdata)
-                im.load()
-                im.format = 'X-DDS' #total hack
-            except IOError:
-                raise ImageError(image_name)
+            #outdata = t.getRamImageAs('RGBA').getData()
+            #try:
+            #    im = Image.fromstring('RGBA', (t.getXSize(), t.getYSize()), outdata)
+            #    im.load()
+            #    im.format = 'X-DDS' #total hack
+            #except IOError:
+            #    raise ImageError(image_name)
+            
+            #So totally cheese it for now
+            
+            class FakePILImage:
+                format = 'X-DDS'
+            
+            im = FakePILImage()
 
         image_objs[image_name] = im
         
