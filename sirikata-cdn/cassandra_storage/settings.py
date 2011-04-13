@@ -4,6 +4,23 @@ CASSANDRA_KEYSPACE = 'SirikataCDN'
 """Keyspace to create/connect to"""
 CASSANDRA_REPLICATION_FACTOR = 1
 """Replication factor for data. This should be 1 for local instances, higher for production deployments"""
+CASSANDRA_REPLICATION_STRATEGY = 'SIMPLE_STRATEGY'
+"""
+Replication strategy. Options are:
+* SIMPLE_STRATEGY Replication strategy that simply chooses consecutive nodes
+  in the ring for replicas
+* NETWORK_TOPOLOGY_STRATEGY Replication strategy that puts a number of replicas
+  in each datacenter
+* OLD_NETWORK_TOPOLOGY_STRATEGY Original replication strategy for putting a number
+  of replicas in each datacenter. This was originally called 'RackAwareStrategy'.
+"""
+CASSANDRA_STRATEGY_OPTIONS = None
+""" CASSANDRA_STRATEGY_OPTIONS is an optional dictionary of strategy options.
+By default, these are only used by NETWORK_TOPOLOGY_STRATEGY; in this case,
+the dictionary should look like: {'Datacenter1': '2', 'Datacenter2': '1'}.
+This maps each datacenter (as defined in a Cassandra property file) to a
+replica count. """
+
 
 """
 There are two consistency levels for cassandra configuration - (READ,WRITE).

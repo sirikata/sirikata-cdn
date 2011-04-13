@@ -24,7 +24,12 @@ class Command(NoArgsCommand):
         except pycassa.NotFoundException:
             pass
         
-        sys.create_keyspace(settings.CASSANDRA_KEYSPACE, replication_factor=settings.CASSANDRA_REPLICATION_FACTOR)
+        REPLICATION_STRATEGY = getattr(pycassa.system_manager, settings.CASSANDRA_REPLICATION_STRATEGY)
+        
+        sys.create_keyspace(settings.CASSANDRA_KEYSPACE,
+                            replication_factor=settings.CASSANDRA_REPLICATION_FACTOR,
+                            replication_strategy=REPLICATION_STRATEGY,
+                            strategy_options=settings.CASSANDRA_STRATEGY_OPTIONS)
         sys.create_column_family(settings.CASSANDRA_KEYSPACE, 'Users', comparator_type=UTF8_TYPE)
         sys.alter_column(settings.CASSANDRA_KEYSPACE, 'Users', 'name', UTF8_TYPE)
         sys.alter_column(settings.CASSANDRA_KEYSPACE, 'Users', 'email', UTF8_TYPE)
