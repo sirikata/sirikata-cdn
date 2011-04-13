@@ -1,8 +1,16 @@
 import pycassa
 from pycassa.cassandra.ttypes import NotFoundException, InvalidRequestException
 from pycassa.cassandra.ttypes import TimedOutException, UnavailableException
+import settings
 
-POOL = pycassa.pool.ConnectionPool('SirikataCDN', timeout=20, framed_transport=True, max_retries=5)
+POOL = pycassa.pool.ConnectionPool(settings.CASSANDRA_KEYSPACE,
+                                   server_list=settings.CASSANDRA_SERVERS,
+                                   timeout=20,
+                                   framed_transport=True,
+                                   max_retries=5)
+
+READ_CONSISTENCY = getattr(pycassa.ConsistencyLevel, settings.CASSANDRA_READ_CONSISTENCY)
+WRITE_CONSISTENCY = getattr(pycassa.ConsistencyLevel, settings.CASSANDRA_WRITE_CONSISTENCY)
 
 class DatabaseError(Exception):
     """
@@ -24,7 +32,10 @@ class InvalidRequestError(DatabaseError):
     pass
 
 def getColumnFamily(name):
-    return pycassa.ColumnFamily(POOL, name)
+    return pycassa.ColumnFamily(POOL,
+                                name,
+                                read_consistency_level=READ_CONSISTENCY,
+                                write_consistency_level=WRITE_CONSISTENCY)
 
 def getRecord(cf, rowkey, columns=None):
     try:

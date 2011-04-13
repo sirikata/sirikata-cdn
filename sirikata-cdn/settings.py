@@ -1,6 +1,6 @@
 import os
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-
+DEBUG_PROPAGATE_EXCEPTIONS = True
 # ========= THESE ARE ITEMS YOU MIGHT WANT TO CHANGE ============
 
 #Turn these off in production
