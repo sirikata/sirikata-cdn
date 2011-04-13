@@ -12,7 +12,7 @@ def get_content_by_date(start="", limit=25):
     try:
         index_rows = getRecord(NAMESBYTIME, 'index_rows', columns=['0'])
     except DatabaseError:
-        return {}
+        return {}, None
     
     cur_index_row = index_rows[0].split(",")[-1]
     

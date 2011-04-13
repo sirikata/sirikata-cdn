@@ -1,4 +1,4 @@
-CASSANDRA_SERVERS = ['localhost:9160']
+CASSANDRA_SERVERS = ['localhost:9160',]
 """Location and port of Cassandra's Thrift interface"""
 CASSANDRA_KEYSPACE = 'SirikataCDN'
 """Keyspace to create/connect to"""
