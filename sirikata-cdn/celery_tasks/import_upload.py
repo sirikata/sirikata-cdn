@@ -289,7 +289,7 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
         subfile_names.append("%s/%s" % (img_path, img_version_num))
 
     str_buffer = StringIO()
-    collada_obj.root.write(str_buffer)
+    collada_obj.write(str_buffer)
     orig_save_data = str_buffer.getvalue()
     orig_hex_key = hashlib.sha256(orig_save_data).hexdigest()
     
