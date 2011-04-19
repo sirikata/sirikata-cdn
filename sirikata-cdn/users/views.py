@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django import forms
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 from openid.consumer.consumer import Consumer
 from openid.consumer.discover import DiscoveryFailure
@@ -54,7 +55,8 @@ def openid_select(request):
         
     auth_request.addExtension(ax_req)
         
-    redirect_url = auth_request.redirectURL(realm=request.build_absolute_uri('/'),
+    realm = settings.OPENID_REALM
+    redirect_url = auth_request.redirectURL(realm=realm,
             return_to=request.build_absolute_uri(reverse('users.views.openid_return')))
         
     return redirect(redirect_url)

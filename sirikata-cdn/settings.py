@@ -20,6 +20,9 @@ MEDIA_URL = '/media/'
 # ============================
 SECRET_KEY = 'u$az#fnxh2rk=+-lwvjfbkmfxzwq5b8xwrn%y#$-vc9ibb$oxo'
 
+#OpenID urls can be a function of the realm, so once you set this, don't change it!
+OPENID_REALM = 'http://localhost:8000/'
+
 # ===============================================================
 
 
