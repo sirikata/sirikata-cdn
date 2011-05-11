@@ -24,11 +24,23 @@ from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
 from celery.execute import send_task
 from celery.result import AsyncResult
 
+def json_handler(obj):
+    if hasattr(obj, 'isoformat'):
+        return obj.isoformat()
+    #elif isinstance(obj, ...):
+    #    return ...
+    else:
+        raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(Obj), repr(Obj))
+
 def browse(request, start=""):
     content_items, next_start = get_content_by_date(start=start)
     view_params = {'content_items': content_items, 'next_start': next_start}
     return render_to_response('content/browse.html', view_params, context_instance = RequestContext(request))
 
+def browse_json(request, start=""):
+    content_items, next_start = get_content_by_date(start=start)
+    view_params = {'content_items': content_items, 'next_start': next_start}
+    return HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
 
 class UploadChoiceForm(forms.Form):
     def __init__(self, task_id, choices, *args, **kwargs):
@@ -179,7 +191,7 @@ def upload_processing(request, task_id='', action=False):
     xhr = request.GET.has_key('xhr')
     if xhr:
         json_result = {'state':res.state}
-        return HttpResponse(simplejson.dumps(json_result), mimetype='application/json')
+        return HttpResponse(simplejson.dumps(json_result, default=json_handler), mimetype='application/json')
     
     if action == 'confirm':
         if upload_rec['task_name'] == 'import_upload':
@@ -323,7 +335,9 @@ def upload_import(request, task_id):
     return render_to_response('content/import.html', view_params, context_instance = RequestContext(request))
 
 def view(request, filename):
-    file_metadata = get_file_metadata("/%s" % filename)
+    try: file_metadata = get_file_metadata("/%s" % filename)
+    except NotFoundError: return HttpResponseNotFound()
+    
     view_params = {'metadata': file_metadata}
     
     split = filename.split("/")
@@ -336,6 +350,18 @@ def view(request, filename):
     else:
         html_page = 'content/view.html'
     return render_to_response(html_page, view_params, context_instance = RequestContext(request))
+
+def view_json(request, filename):
+    try: file_metadata = get_file_metadata("/%s" % filename)
+    except NotFoundError: return HttpResponseNotFound()
+    
+    view_params = {'metadata': file_metadata}
+    
+    split = filename.split("/")
+    view_params['version'] = split[-1:][0]
+    view_params['basename'] = split[-2:][0]
+    view_params['basepath'] = "/".join(split[:-1])
+    return HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
 
 @decorator_from_middleware(GZipMiddleware)
 def download(request, hash, filename=None):

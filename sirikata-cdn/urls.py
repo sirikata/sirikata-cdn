@@ -18,7 +18,9 @@ urlpatterns = patterns('',
     (r'^login/openid_link$', 'users.views.openid_link'),
     (r'^login/$', 'users.views.login'),
     (r'^logout/$', 'users.views.logout'),
-    (r'^(?P<start>[0-9]*)$', 'content.views.browse')
+    (r'^api/modelinfo/(?P<filename>[\w\-\./]+)$', 'content.views.view_json'),
+    (r'^api/browse/(?P<start>[0-9]*)$', 'content.views.browse_json'),
+    (r'^(?P<start>[0-9]*)$', 'content.views.browse'),
 )
 
 if settings.DEBUG:
