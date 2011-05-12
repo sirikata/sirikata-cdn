@@ -40,12 +40,12 @@ def _generate_screenshot(filename, typeid):
         bbox = im.split()[list(im.getbands()).index('A')].getbbox()
         im = im.crop(bbox)
     main_screenshot = StringIO()
-    im.save(main_screenshot, "PNG")
+    im.save(main_screenshot, "PNG", optimize=1)
     main_screenshot = main_screenshot.getvalue()
     
     thumbnail = StringIO()
     im.thumbnail((96,96), Image.ANTIALIAS)
-    im.save(thumbnail, "PNG")
+    im.save(thumbnail, "PNG", optimize=1)
     thumbnail = thumbnail.getvalue()
     
     main_key = hashlib.sha256(main_screenshot).hexdigest()
