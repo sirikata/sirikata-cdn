@@ -3,29 +3,39 @@ import os.path
 import time
 from celery.execute import send_task
 
-thisdir = os.path.dirname( os.path.realpath( __file__ ) )
-upone, tail = os.path.split(thisdir)
-cdndir = os.path.join(upone, 'sirikata-cdn')
-celerydir = os.path.join(cdndir, 'celery_tasks')
+def do_screenshot(path, type):
+    print 'Issuing screenshot task for %s type=%s' % (path, type)
+    t = send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[path, type])
+    t.wait()
+    print 'Task finished with state %s' % t.state
+    if t.state == 'FAILED':
+        print 'Printing exception:'
+        print
+        print str(t.result)
+        print
+    time.sleep(1)
 
-sys.path.append(cdndir)
-sys.path.append(celerydir)
+def main():
+    if len(sys.argv) == 3:
+        do_screenshot(sys.argv[1], sys.argv[2])
+    else:
+        next_start = ""
+        while next_start is not None:
+            content_items, next_start = get_content_by_date(next_start)
+            for item in content_items:
+                path = item['full_path']
+                for type in item['metadata']['types'].iterkeys():
+                    do_screenshot(path, type)
 
-from content.utils import get_content_by_date
+def add_dirs():
+    thisdir = os.path.dirname( os.path.realpath( __file__ ) )
+    upone, tail = os.path.split(thisdir)
+    cdndir = os.path.join(upone, 'sirikata-cdn')
+    celerydir = os.path.join(cdndir, 'celery_tasks')
+    sys.path.append(cdndir)
+    sys.path.append(celerydir)
 
-next_start = ""
-while next_start is not None:
-    content_items, next_start = get_content_by_date(next_start)
-    for item in content_items:
-        path = item['full_path']
-        type = 'original'
-        print 'Issuing screenshot task for %s' % path
-        t = send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[path, "original"])
-        t.wait()
-        print 'Task finished with state %s' % t.state
-        if t.state == 'FAILED':
-            print 'Printing exception:'
-            print
-            print str(t.result)
-            print
-        time.sleep(1)
+if __name__ == '__main__':
+    add_dirs()
+    from content.utils import get_content_by_date
+    main()
