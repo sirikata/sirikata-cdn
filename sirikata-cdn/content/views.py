@@ -16,7 +16,7 @@ from cassandra_storage.cassandra_util import NotFoundError
 from users.middleware import save_upload_task, get_pending_upload, \
                              remove_pending_upload, save_file_upload
 
-from content.utils import get_file_metadata, get_hash, get_content_by_date
+from content.utils import get_file_metadata, get_hash, get_content_by_date, add_base_metadata
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
@@ -334,6 +334,47 @@ def upload_import(request, task_id):
                    'filename': filename}
     return render_to_response('content/import.html', view_params, context_instance = RequestContext(request))
 
+class EditFile(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(EditFile, self).__init__(*args, **kwargs)
+        self.fields['title'] = forms.CharField(required=True, min_length=1, max_length=100, widget=forms.TextInput(attrs={
+            'class': '{required:true, minlength:1, maxlength:100}'
+        }))
+        self.fields['description'] = forms.CharField(required=False, max_length=1000, widget=forms.Textarea(attrs={
+            'class': '{maxlength:1000}'
+        }))
+def edit_file(request, filename):
+    try: file_metadata = get_file_metadata("/%s" % filename)
+    except NotFoundError: return HttpResponseNotFound()
+    
+    split = filename.split("/")
+    file_username = split[0]
+    basepath = "/" + "/".join(split[:-1])
+    version = split[-1:][0]
+    
+    if file_username != request.user.get('username'):
+        return HttpResponseForbidden()
+    
+    if request.method == 'POST':
+        form = EditFile(request.POST)
+        if form.is_valid():
+            title = form.cleaned_data['title']
+            description = form.cleaned_data['description']
+            
+            #try:
+            updated_info = {'title': title, 'description': description}
+            add_base_metadata(basepath, version, updated_info)
+            #except:
+            #    return HttpResponseServerError("There was an error editing your file.")
+            
+            return redirect('content.views.view', filename)
+    else:
+        form = EditFile(initial={'title':file_metadata['title'], 'description':file_metadata['description']})
+    
+    view_params = {'form': form,
+                   'filename': filename}
+    return render_to_response('content/edit.html', view_params, context_instance = RequestContext(request))
+
 def view(request, filename):
     try: file_metadata = get_file_metadata("/%s" % filename)
     except NotFoundError: return HttpResponseNotFound()
@@ -344,6 +385,12 @@ def view(request, filename):
     view_params['version'] = split[-1:][0]
     view_params['basename'] = split[-2:][0]
     view_params['basepath'] = "/".join(split[:-1])
+    view_params['fullpath'] = filename
+    file_username = split[0]
+    
+    view_params['can_change'] = False
+    if file_username == request.user.get('username'):
+        view_params['can_change'] = True
     
     if file_metadata['type'] == 'image':
         html_page = 'content/view_image.html'
@@ -361,6 +408,7 @@ def view_json(request, filename):
     view_params['version'] = split[-1:][0]
     view_params['basename'] = split[-2:][0]
     view_params['basepath'] = "/".join(split[:-1])
+    view_params['fullpath'] = filename
     return HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
 
 @decorator_from_middleware(GZipMiddleware)

@@ -108,3 +108,12 @@ def add_metadata(path, version_num, type_id, metadata):
         version_dict['types'][type_id][key] = val
     
     insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
+    
+def add_base_metadata(path, version_num, metadata):    
+    rec = getRecord(NAMES, path, columns=[version_num])
+    version_dict = json.loads(rec[version_num])
+       
+    for key, val in metadata.iteritems():
+        version_dict[key] = val
+    
+    insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})

@@ -23,6 +23,12 @@
         <p class="bold">
         {{ metadata.description|linebreaksbr|default:"<em>No description</em>" }}
         </p>
+        {% if can_change %}
+        <br>
+        <p>
+	        <a class="button" href="{% url content.views.edit_file fullpath %}">Edit</a>
+        </p>
+        {% endif %}
     </div>
 </div>
 
