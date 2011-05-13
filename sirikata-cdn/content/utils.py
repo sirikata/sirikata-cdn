@@ -3,6 +3,7 @@ import json
 import time
 import datetime
 import operator
+from users.middleware import remove_file_upload
 
 NAMES = getColumnFamily('Names')
 FILES = getColumnFamily('Files')
@@ -34,6 +35,7 @@ def get_content_by_date(start="", limit=25):
         username = path.split("/")[1]
         multiget_keys.append(base_path)
         content_items.append({'timestamp': datetime.datetime.fromtimestamp(timestamp / 1e6),
+                               'full_timestamp': timestamp,
                                'version_num': version_num,
                                'base_path': base_path,
                                'username': username,
@@ -45,13 +47,24 @@ def get_content_by_date(start="", limit=25):
     # in practice will probably be low, but it's still unecessary load on the database
     name_recs = multiGetRecord(NAMES, multiget_keys)
     
+    found_items = []
+    deleted_items = []
     for content_item in content_items:
-        name_metadata = json.loads(name_recs[content_item['base_path']][content_item['version_num']])
-        content_item['metadata'] = name_metadata
+        if content_item['base_path'] in name_recs and content_item['version_num'] in name_recs[content_item['base_path']]:
+            name_metadata = json.loads(name_recs[content_item['base_path']][content_item['version_num']])
+            content_item['metadata'] = name_metadata
+            found_items.append(content_item)
+        else:
+            deleted_items.append(content_item)
         
-    content_items = sorted(content_items, key=operator.itemgetter("timestamp"), reverse=True)
+    #do some lazy index maintenance
+    for content_item in deleted_items:
+        try: removeColumns(NAMESBYTIME, cur_index_row, columns=[content_item['full_timestamp']])
+        except DatabaseError: pass
+    
+    found_items = sorted(found_items, key=operator.itemgetter("timestamp"), reverse=True)
         
-    return content_items, next_start
+    return found_items, next_start
     
 
 def get_file_metadata(filename):
@@ -117,3 +130,8 @@ def add_base_metadata(path, version_num, metadata):
         version_dict[key] = val
     
     insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
+
+def delete_file_metadata(path, version_num):
+    username = path.split("/")[1]
+    remove_file_upload(username, "%s/%s" % (path, version_num))
+    removeColumns(NAMES, path, columns=[version_num])

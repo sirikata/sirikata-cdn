@@ -16,7 +16,8 @@ from cassandra_storage.cassandra_util import NotFoundError
 from users.middleware import save_upload_task, get_pending_upload, \
                              remove_pending_upload, save_file_upload
 
-from content.utils import get_file_metadata, get_hash, get_content_by_date, add_base_metadata
+from content.utils import get_file_metadata, get_hash, get_content_by_date
+from content.utils import add_base_metadata, delete_file_metadata
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
@@ -361,11 +362,11 @@ def edit_file(request, filename):
             title = form.cleaned_data['title']
             description = form.cleaned_data['description']
             
-            #try:
-            updated_info = {'title': title, 'description': description}
-            add_base_metadata(basepath, version, updated_info)
-            #except:
-            #    return HttpResponseServerError("There was an error editing your file.")
+            try:
+                updated_info = {'title': title, 'description': description}
+                add_base_metadata(basepath, version, updated_info)
+            except:
+                return HttpResponseServerError("There was an error editing your file.")
             
             return redirect('content.views.view', filename)
     else:
@@ -374,6 +375,22 @@ def edit_file(request, filename):
     view_params = {'form': form,
                    'filename': filename}
     return render_to_response('content/edit.html', view_params, context_instance = RequestContext(request))
+
+def delete_file(request, filename):
+    try: file_metadata = get_file_metadata("/%s" % filename)
+    except NotFoundError: return HttpResponseNotFound()
+    
+    split = filename.split("/")
+    file_username = split[0]
+    basepath = "/" + "/".join(split[:-1])
+    version = split[-1:][0]
+    
+    if file_username != request.user.get('username'):
+        return HttpResponseForbidden()
+    
+    delete_file_metadata(basepath, version)
+    
+    return redirect('users.views.uploads')
 
 def view(request, filename):
     try: file_metadata = get_file_metadata("/%s" % filename)

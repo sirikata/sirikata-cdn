@@ -46,10 +46,7 @@ def get_uploads(username):
 def get_pending_upload(username, task_id):
     col_key = "uploading:%s" % task_id
     
-    try:
-        pending = getRecord(USERS, username, columns=[col_key])
-    except DatabaseError:
-        raise
+    pending = getRecord(USERS, username, columns=[col_key])
 
     values = json.loads(pending[col_key])
     values['task_id'] = task_id
@@ -58,26 +55,20 @@ def get_pending_upload(username, task_id):
 def remove_pending_upload(username, task_id):
     col_key = "uploading:%s" % task_id
     
-    try:
-        removeColumns(USERS, username, columns=[col_key])
-    except DatabaseError:
-        raise
+    removeColumns(USERS, username, columns=[col_key])
 
 def save_upload_task(username, task_id, row_key, filename, subfiles, dae_choice, task_name):
     vals = {"main_rowkey":row_key, "filename":filename,"subfiles":subfiles,
             'dae_choice':dae_choice, 'task_name': task_name}
     upload_rec = json.dumps(vals)
     task = {"uploading:%s" % task_id : upload_rec}
-    try:
-        insertRecord(USERS, username, columns=task)
-    except DatabaseError:
-        raise
+    insertRecord(USERS, username, columns=task)
 
 def save_file_upload(username, path):
-    try:
-        insertRecord(USERS, username, columns={"uploaded:%s" % path : ""})
-    except DatabaseError:
-        raise
+    insertRecord(USERS, username, columns={"uploaded:%s" % path : ""})
+
+def remove_file_upload(username, path):
+    removeColumns(USERS, username, columns=["uploaded:%s" % path])
 
 def login_with_openid_identity(request, identity_url):
     try:

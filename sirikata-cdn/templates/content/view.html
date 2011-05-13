@@ -11,6 +11,24 @@
     		fillSpace: true,
     		collapsible: true
     	});
+        $( "#delete-dialog-confirm" ).dialog({
+            resizable: false,
+            autoOpen: false,
+            height:140,
+            modal: true,
+            buttons: {
+	            "Delete": function() {
+	                window.location = $( "a#delete_button ").attr('href');
+	            },
+	            "Cancel": function() {
+	                $(this).dialog("close");
+	            }
+            }
+        });
+        $( "a#delete_button ").click(function() {
+            $( "#delete-dialog-confirm" ).dialog('open');
+            return false;
+        });
     });
 </script>
 {% endblock js_includes %} 
@@ -27,6 +45,7 @@
         <br>
         <p>
 	        <a class="button" href="{% url content.views.edit_file fullpath %}">Edit</a>
+	        <a id='delete_button' class="button" href="{% url content.views.delete_file fullpath %}">Delete</a>
         </p>
         {% endif %}
     </div>
@@ -64,6 +83,10 @@
         </p>
     </div>
     {% endfor %}
+</div>
+
+<div id="delete-dialog-confirm" title="Delete File?">
+    <p>This will permanently delete the file and cannot be undone. Are you sure?</p>
 </div>
 
 {% endblock main_content %}
