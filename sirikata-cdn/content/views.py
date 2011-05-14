@@ -41,7 +41,9 @@ def browse(request, start=""):
 def browse_json(request, start=""):
     content_items, next_start = get_content_by_date(start=start)
     view_params = {'content_items': content_items, 'next_start': next_start}
-    return HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
+    response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
+    response['Access-Control-Allow-Origin'] = '*'
+    return response
 
 class UploadChoiceForm(forms.Form):
     def __init__(self, task_id, choices, *args, **kwargs):
@@ -426,7 +428,9 @@ def view_json(request, filename):
     view_params['basename'] = split[-2:][0]
     view_params['basepath'] = "/".join(split[:-1])
     view_params['fullpath'] = filename
-    return HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
+    response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
+    response['Access-Control-Allow-Origin'] = '*'
+    return response
 
 @decorator_from_middleware(GZipMiddleware)
 def download(request, hash, filename=None):
