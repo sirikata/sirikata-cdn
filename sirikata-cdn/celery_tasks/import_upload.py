@@ -6,9 +6,10 @@ from content.utils import save_file_data
 from StringIO import StringIO
 import Image
 import zipfile
-import os.path
+import posixpath
 import hashlib
 import json
+import re
 
 import time
 import sys
@@ -178,18 +179,17 @@ def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles):
     not_found_list = []
     subfile_data = {}
 
-    #TODO: Use of os.path would likely break on windows
     for img in col.images:
         rel_path = img.path
-        base_name = os.path.basename(img.path)
+        base_name = posixpath.basename(img.path)
         
         if base_name in subfiles:
             img_data = get_temp_file(subfiles[base_name])
             subfile_data[base_name] = img_data
         elif dae_zip_name is not None:
-            dae_prefix = os.path.split(dae_zip_name)[0]
-            concat_path = os.path.join(dae_prefix, rel_path)
-            norm_path = os.path.normpath(concat_path)
+            dae_prefix = posixpath.split(dae_zip_name)[0]
+            concat_path = posixpath.join(dae_prefix, rel_path)
+            norm_path = posixpath.normpath(concat_path)
             if norm_path in zip.namelist():
                 img_data = zip.read(norm_path)
                 subfile_data[base_name] = img_data
@@ -274,9 +274,27 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     #Make sure image paths are just the base name
     current_prefix = "original"
     subfile_names = []
+    image_names = []
     for img in collada_obj.images:
         rel_path = img.path
-        base_name = os.path.basename(img.path)
+        base_name = posixpath.basename(img.path)
+        orig_base_name = base_name
+        
+        #strip out any character not allowed
+        base_name = re.sub('[^\w\-\.]', '', base_name)
+        
+        #make sure that referenced texture files are unique
+        while base_name in image_names:
+            dot = base_name.rfind('.')
+            ext = base_name[dot:] if dot != -1 else ''
+            before_ext = base_name[0:dot] if dot != -1 else base_name
+            base_name = "%s-x%s" % (before_ext, ext)
+            
+        subfile_data[base_name] = subfile_data[orig_base_name]
+        del subfile_data[orig_base_name]
+        image_objs[base_name] = image_objs[orig_base_name]
+        del image_objs[orig_base_name]
+            
         img.path = "./%s" % base_name
         img.save()
         img_hex_key = hashlib.sha256(subfile_data[base_name]).hexdigest()
@@ -300,7 +318,7 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     
     zip_buffer = StringIO()
     combined_zip = zipfile.ZipFile(zip_buffer, mode='w', compression=zipfile.ZIP_DEFLATED)
-    combined_zip.writestr(os.path.basename(path), orig_save_data)
+    combined_zip.writestr(posixpath.basename(path), orig_save_data)
     for img_name, img_data in subfile_data.iteritems():
         combined_zip.writestr(img_name, img_data)
     combined_zip.close()
