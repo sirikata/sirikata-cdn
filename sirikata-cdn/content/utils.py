@@ -108,6 +108,41 @@ def save_file_data(hash, data, mimetype):
     except DatabaseError:
         raise DatabaseError()
 
+def save_version_type(path, version_num, hash_key, length, subfile_names, zip_key, type_id, title=None, description=None):
+    try:
+        rec = getRecord(NAMES, path, columns=[version_num])
+        version_dict = json.loads(rec[version_num])
+    except NotFoundError:
+        version_dict = {}
+    
+    if 'types' not in version_dict:
+        version_dict['types'] = {}
+    
+    if 'title' not in version_dict:
+        version_dict['title'] = title
+    if 'description' not in version_dict:
+        version_dict['description'] = description
+    
+    version_dict['types'][type_id] = {'hash': hash_key,
+                                      'size': length,
+                                      'subfiles': subfile_names,
+                                      'zip': zip_key}
+    
+    insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
+
+    try:
+        index_rows = getRecord(NAMESBYTIME, "index_rows", columns=['0'])
+    except NotFoundError:
+        index_rows = None
+    
+    if index_rows is None:
+        insertRecord(NAMESBYTIME, "index_rows", columns={"0": "0"})
+        cur_index_row = "0"
+    else:
+        cur_index_row = index_rows[0].split(",")[-1]
+
+    insertRecord(NAMESBYTIME, cur_index_row, {long(time.time() * 1e6) : "%s/%s" % (path, version_num)})
+
 def add_metadata(path, version_num, type_id, metadata):    
     rec = getRecord(NAMES, path, columns=[version_num])
     version_dict = json.loads(rec[version_num])

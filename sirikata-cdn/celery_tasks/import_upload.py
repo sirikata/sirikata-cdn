@@ -2,7 +2,7 @@ import collada as coll
 from celery.task import task
 from celery.execute import send_task
 import cassandra_storage.cassandra_util as cass
-from content.utils import save_file_data
+from content.utils import save_file_data, save_version_type
 from StringIO import StringIO
 import Image
 import zipfile
@@ -52,58 +52,6 @@ def save_file_name(path, version_num, hash_key, length):
     cf = cass.getColumnFamily("Names")
     try:
         cass.insertRecord(cf, path, columns={version_num: col_val})
-    except cass.DatabaseError:
-        raise DatabaseError()
-
-def save_version_type(path, version_num, hash_key, length, subfile_names, title, description, zip_key, type_id):
-    cf = cass.getColumnFamily("Names")
-    time_index_cf = cass.getColumnFamily("NameTimestampIndex")
-    
-    try:
-        rec = cass.getRecord(cf, path, columns=[version_num])
-        version_dict = json.loads(rec[version_num])
-    except cass.NotFoundError:
-        version_dict = {}
-    except cass.DatabaseError:
-        raise DatabaseError()
-    
-    if 'types' not in version_dict:
-        version_dict['types'] = {}
-    
-    if 'title' not in version_dict:
-        version_dict['title'] = title
-    if 'description' not in version_dict:
-        version_dict['description'] = description
-    
-    version_dict['types'][type_id] = {'hash': hash_key,
-                                      'size': length,
-                                      'subfiles': subfile_names,
-                                      'zip': zip_key}
-    
-    try:
-        cass.insertRecord(cf, path, columns={version_num: json.dumps(version_dict)})
-    except cass.DatabaseError:
-        raise DatabaseError()
-
-    try:
-        index_rows = cass.getRecord(time_index_cf, "index_rows", columns=['0'])
-    except cass.NotFoundError:
-        index_rows = None
-    except cass.DatabaseError:
-        raise DatabaseError()
-    
-    if index_rows is None:
-        try:
-            cass.insertRecord(time_index_cf, "index_rows", columns={"0": "0"})
-        except cass.DatabaseError:
-            raise DatabaseError()
-        cur_index_row = "0"
-    else:
-        print index_rows
-        cur_index_row = index_rows[0].split(",")[-1]
-
-    try:
-        cass.insertRecord(time_index_cf, cur_index_row, {long(time.time() * 1e6) : "%s/%s" % (path, version_num)})
     except cass.DatabaseError:
         raise DatabaseError()
 
@@ -290,11 +238,12 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
             before_ext = base_name[0:dot] if dot != -1 else base_name
             base_name = "%s-x%s" % (before_ext, ext)
             
-        subfile_data[base_name] = subfile_data[orig_base_name]
-        del subfile_data[orig_base_name]
-        image_objs[base_name] = image_objs[orig_base_name]
-        del image_objs[orig_base_name]
-            
+        if base_name != orig_base_name:
+            subfile_data[base_name] = subfile_data[orig_base_name]
+            del subfile_data[orig_base_name]
+            image_objs[base_name] = image_objs[orig_base_name]
+            del image_objs[orig_base_name]
+        
         img.path = "./%s" % base_name
         img.save()
         img_hex_key = hashlib.sha256(subfile_data[base_name]).hexdigest()
@@ -311,8 +260,6 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     orig_save_data = str_buffer.getvalue()
     orig_hex_key = hashlib.sha256(orig_save_data).hexdigest()
     
-    print orig_hex_key
-    print len(orig_save_data)
     try: save_file_data(orig_hex_key, orig_save_data, "application/xml")
     except: raise
     
@@ -327,8 +274,11 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     try: save_file_data(zip_hex_key, zip_save_data, "application/zip")
     except: raise DatabaseError()
     
-    save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),
-                      subfile_names, title, description, zip_hex_key, "original")
+    try:
+        save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),
+                          subfile_names, zip_hex_key, "original", title, description)
+    except cass.DatabaseError:
+        raise DatabaseError()
 
     path_with_vers = "%s/%s" % (path, new_version_num)
 
