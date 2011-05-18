@@ -8,8 +8,9 @@
     $(document).ready(function() {
     	$( "#title_accordian" ).accordion();
     	$( "#type_accordian" ).accordion({
-    		fillSpace: true,
-    		collapsible: true
+    		fillSpace: false,
+    		collapsible: true,
+    		autoHeight: false
     	});
         $( "#delete-dialog-confirm" ).dialog({
             resizable: false,

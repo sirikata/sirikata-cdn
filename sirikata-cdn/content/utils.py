@@ -120,8 +120,10 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, zip_ke
     except NotFoundError:
         version_dict = {}
     
+    create_index = False
     if 'types' not in version_dict:
         version_dict['types'] = {}
+        create_index = True
     
     if 'title' not in version_dict:
         version_dict['title'] = title
@@ -135,18 +137,19 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, zip_ke
     
     insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
 
-    try:
-        index_rows = getRecord(NAMESBYTIME, "index_rows", columns=['0'])
-    except NotFoundError:
-        index_rows = None
+    if create_index:
+        try:
+            index_rows = getRecord(NAMESBYTIME, "index_rows", columns=['0'])
+        except NotFoundError:
+            index_rows = None
+        
+        if index_rows is None:
+            insertRecord(NAMESBYTIME, "index_rows", columns={"0": "0"})
+            cur_index_row = "0"
+        else:
+            cur_index_row = index_rows[0].split(",")[-1]
     
-    if index_rows is None:
-        insertRecord(NAMESBYTIME, "index_rows", columns={"0": "0"})
-        cur_index_row = "0"
-    else:
-        cur_index_row = index_rows[0].split(",")[-1]
-
-    insertRecord(NAMESBYTIME, cur_index_row, {long(time.time() * 1e6) : "%s/%s" % (path, version_num)})
+        insertRecord(NAMESBYTIME, cur_index_row, {long(time.time() * 1e6) : "%s/%s" % (path, version_num)})
 
 def get_new_version_from_path(path, file_type):    
     try:
