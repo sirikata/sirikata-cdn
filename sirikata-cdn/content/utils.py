@@ -143,6 +143,17 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, zip_ke
 
     insertRecord(NAMESBYTIME, cur_index_row, {long(time.time() * 1e6) : "%s/%s" % (path, version_num)})
 
+def get_new_version_from_path(path, file_type):    
+    try:
+        rec = getRecord(NAMES, path, columns=["latest"])
+        latest = str(int(rec['latest'])+1)
+    except NotFoundError:
+        latest = "0"
+
+    insertRecord(NAMES, path, columns={"latest":latest, "type":file_type})
+
+    return latest
+
 def add_metadata(path, version_num, type_id, metadata):    
     rec = getRecord(NAMES, path, columns=[version_num])
     version_dict = json.loads(rec[version_num])

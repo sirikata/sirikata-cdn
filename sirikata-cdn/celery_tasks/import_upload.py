@@ -2,7 +2,7 @@ import collada as coll
 from celery.task import task
 from celery.execute import send_task
 import cassandra_storage.cassandra_util as cass
-from content.utils import save_file_data, save_version_type
+from content.utils import save_file_data, save_version_type, get_new_version_from_path
 from StringIO import StringIO
 import Image
 import zipfile
@@ -54,24 +54,6 @@ def save_file_name(path, version_num, hash_key, length):
         cass.insertRecord(cf, path, columns={version_num: col_val})
     except cass.DatabaseError:
         raise DatabaseError()
-
-def get_new_version_from_path(path, file_type):
-    cf = cass.getColumnFamily("Names")
-    
-    try:
-        rec = cass.getRecord(cf, path, columns=["latest"])
-        latest = str(int(rec['latest'])+1)
-    except cass.NotFoundError:
-        latest = "0"
-    except cass.DatabaseError:
-        raise DatabaseError()
-
-    try:
-        cass.insertRecord(cf, path, columns={"latest":latest, "type":file_type})
-    except cass.DatabaseError:
-        raise DatabaseError()
-
-    return latest
 
 def get_temp_file(rowkey):
     cf = cass.getColumnFamily("TempFiles")
@@ -217,7 +199,8 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     (collada_obj, subfile_data, image_objs) = get_collada_and_images(zip, dae_zip_name, dae_data, subfiles)
 
     import_upload.update_state(state="SAVING_ORIGINAL")
-    new_version_num = get_new_version_from_path(path, file_type="collada")
+    try: new_version_num = get_new_version_from_path(path, file_type="collada")
+    except cass.DatabaseError: raise DatabaseError()
     
     #Make sure image paths are just the base name
     current_prefix = "original"
@@ -251,7 +234,8 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
         except: raise DatabaseError()
         img_path = "%s/%s/%s" % (path, current_prefix, base_name)
         img_len = len(subfile_data[base_name])
-        img_version_num = get_new_version_from_path(img_path, file_type="image")
+        try: img_version_num = get_new_version_from_path(img_path, file_type="image")
+        except cass.DatabaseError: raise DatabaseError()
         save_file_name(img_path, img_version_num, img_hex_key, img_len)
         subfile_names.append("%s/%s" % (img_path, img_version_num))
 
