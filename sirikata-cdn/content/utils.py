@@ -107,6 +107,11 @@ def save_file_data(hash, data, mimetype):
         rec = insertRecord(FILES, hash, columns={"data": data, "mimetype": mimetype})
     except DatabaseError:
         raise DatabaseError()
+    
+def save_file_name(path, version_num, hash_key, length):    
+    dict = {'hash': hash_key, 'size': length}
+    col_val = json.dumps(dict)
+    insertRecord(NAMES, path, columns={version_num: col_val})
 
 def save_version_type(path, version_num, hash_key, length, subfile_names, zip_key, type_id, title=None, description=None):
     try:

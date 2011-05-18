@@ -2,7 +2,8 @@ import collada as coll
 from celery.task import task
 from celery.execute import send_task
 import cassandra_storage.cassandra_util as cass
-from content.utils import save_file_data, save_version_type, get_new_version_from_path
+from content.utils import save_file_data, save_version_type
+from content.utils import get_new_version_from_path, save_file_name
 from StringIO import StringIO
 import Image
 import zipfile
@@ -42,18 +43,6 @@ class ImageError(Exception):
     def __init__(self, filename, *args, **kwargs):
         super(ImageError,self).__init__(filename, *args, **kwargs)
         self.filename = filename
-
-def save_file_name(path, version_num, hash_key, length):
-    cf = cass.getColumnFamily("Names")
-    
-    dict = {'hash': hash_key, 'size': length}
-    col_val = json.dumps(dict)
-    
-    cf = cass.getColumnFamily("Names")
-    try:
-        cass.insertRecord(cf, path, columns={version_num: col_val})
-    except cass.DatabaseError:
-        raise DatabaseError()
 
 def get_temp_file(rowkey):
     cf = cass.getColumnFamily("TempFiles")
@@ -236,7 +225,8 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
         img_len = len(subfile_data[base_name])
         try: img_version_num = get_new_version_from_path(img_path, file_type="image")
         except cass.DatabaseError: raise DatabaseError()
-        save_file_name(img_path, img_version_num, img_hex_key, img_len)
+        try: save_file_name(img_path, img_version_num, img_hex_key, img_len)
+        except cass.DatabaseError: raise DatabaseError()
         subfile_names.append("%s/%s" % (img_path, img_version_num))
 
     str_buffer = StringIO()
