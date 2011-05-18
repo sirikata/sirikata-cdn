@@ -6,7 +6,7 @@ from celery.execute import send_task
 def do_optimized(path, type):
     print 'Issuing generate_optimized task for %s type=%s' % (path, type)
     t = send_task("celery_tasks.generate_optimized.generate_optimized", args=[path, type])
-    t.wait()
+    t.wait(propagate=False)
     print 'Task finished with state %s' % t.state
     if t.state == 'FAILED':
         print 'Printing exception:'
