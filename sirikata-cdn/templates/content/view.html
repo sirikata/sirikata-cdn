@@ -7,11 +7,10 @@
 <script type="text/javascript"> 
     $(document).ready(function() {
     	$( "#title_accordian" ).accordion();
-    	$( "#type_accordian" ).accordion({
-    		fillSpace: false,
-    		collapsible: true,
-    		autoHeight: false
-    	});
+        $("#type_tabs").tabs();
+        $("#type_tabs").bind("tabsshow", function(event, ui) { 
+            window.location.hash = ui.tab.hash;
+        })
         $( "#delete-dialog-confirm" ).dialog({
             resizable: false,
             autoOpen: false,
@@ -54,35 +53,39 @@
 
 <br>
 
-<div id="type_accordian">
+<div id="type_tabs">
+    <ul>
+        {% for type_name, props in metadata.types.items %}
+           <li><a href="#{{type_name}}">{{ type_name|capfirst }}</a></li>
+        {% endfor %}
+    </ul>
     {% for type_name, props in metadata.types.items %}
-    <h3><a href="#">{{ type_name|capfirst }}</a></h3>
-    <div>
-        <p>
-            <div class="pagelet">
-            {% if props.thumbnail and props.screenshot %}
-            <a href="{% url content.views.download props.screenshot %}">
-            <img alt="Click for larger version" class="thumbnail" src="{% url content.views.download props.thumbnail %}"/>
-            </a>
-            {% endif %}
-            <table>
-            <thead><th colspan="2">File Info</th></thead>
-            {% if props.zip %}
-            <tr><td class="label">Download Zip</td><td><a href="{% url content.views.download props.zip basename %}.zip">{{ basename }}.zip</a></td></tr>
-            <tr><td class="label">Zip Hash</td><td>{{ props.zip }}</td></tr>
-            {% endif %}
-            <tr><td class="label">Download Mesh</td><td><a href="{% url content.views.download props.hash basename %}">{{ basename }}</a></td></tr>
-            <tr><td class="label">Mesh Hash</td><td>{{ props.hash }}</td></tr>
-            <tr><td class="label">Mesh Size</td><td>{{ props.size|filesizeformat }}</td></tr>
-            <tr><td class="label">Sirikata URL</td><td>meerkat:///{{ basepath }}/{{ type_name }}/{{ version }}/{{ basename }}</td></tr>
-            {% for subfile in props.subfiles %}
-            <tr><td class="label">Subfile {{ forloop.counter }}</td>
-            <td><a href="{% url content.views.view subfile|slice:"1:" %}">{{ subfile }}</a></td></tr>
-            {% endfor %}
-            </table>
-            </div>
-        </p>
-    </div>
+	    <div id="{{type_name}}">
+	        <p>
+	            <div class="pagelet">
+	            {% if props.thumbnail and props.screenshot %}
+	            <a href="{% url content.views.download props.screenshot %}">
+	            <img alt="Click for larger version" class="thumbnail" src="{% url content.views.download props.thumbnail %}"/>
+	            </a>
+	            {% endif %}
+	            <table>
+	            <thead><th colspan="2">File Info</th></thead>
+	            {% if props.zip %}
+	            <tr><td class="label">Download Zip</td><td><a href="{% url content.views.download props.zip basename %}.zip">{{ basename }}.zip</a></td></tr>
+	            <tr><td class="label">Zip Hash</td><td>{{ props.zip }}</td></tr>
+	            {% endif %}
+	            <tr><td class="label">Download Mesh</td><td><a href="{% url content.views.download props.hash basename %}">{{ basename }}</a></td></tr>
+	            <tr><td class="label">Mesh Hash</td><td>{{ props.hash }}</td></tr>
+	            <tr><td class="label">Mesh Size</td><td>{{ props.size|filesizeformat }}</td></tr>
+	            <tr><td class="label">Sirikata URL</td><td>meerkat:///{{ basepath }}/{{ type_name }}/{{ version }}/{{ basename }}</td></tr>
+	            {% for subfile in props.subfiles %}
+	            <tr><td class="label">Subfile {{ forloop.counter }}</td>
+	            <td><a href="{% url content.views.view subfile|slice:"1:" %}">{{ subfile }}</a></td></tr>
+	            {% endfor %}
+	            </table>
+	            </div>
+	        </p>
+	    </div>
     {% endfor %}
 </div>
 
