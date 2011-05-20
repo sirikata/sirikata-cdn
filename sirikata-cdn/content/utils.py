@@ -3,6 +3,7 @@ import json
 import time
 import datetime
 import operator
+import posixpath
 from users.middleware import remove_file_upload
 
 NAMES = getColumnFamily('Names')
@@ -32,6 +33,8 @@ def get_content_by_date(start="", limit=25):
     for timestamp, path in content_paths.iteritems():
         version_num = path.split("/")[-1]
         base_path = "/".join(path.split("/")[:-1])
+        base_name = posixpath.basename(base_path)
+        prefix_path = posixpath.dirname(base_path)
         username = path.split("/")[1]
         multiget_keys.append(base_path)
         content_items.append({'timestamp': datetime.datetime.fromtimestamp(timestamp / 1e6),
@@ -39,6 +42,8 @@ def get_content_by_date(start="", limit=25):
                                'version_num': version_num,
                                'base_path': base_path,
                                'username': username,
+                               'base_name': base_name,
+                               'prefix_path': prefix_path,
                                'full_path': "%s/%s" % (base_path, version_num)})
     
     #TODO: This sucks. There is no way to issue a set of (rowkey, [columns]) to multiget
