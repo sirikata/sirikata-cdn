@@ -8,9 +8,6 @@
     $(document).ready(function() {
     	$( "#title_accordian" ).accordion();
         $("#type_tabs").tabs();
-        $("#type_tabs").bind("tabsshow", function(event, ui) { 
-            window.location.hash = ui.tab.hash;
-        })
         $( "#delete-dialog-confirm" ).dialog({
             resizable: false,
             autoOpen: false,
@@ -51,7 +48,21 @@
     </div>
 </div>
 
-<br>
+<div class="pagelet">
+<div id="version_info">
+<b>Versions:</b>
+{% for v in all_versions %}
+{% if v != version %}<a href="{% url content.views.view basepath|add:'/'|add:v %}">{{v}}{% if not forloop.last %},{% endif %}</a>
+{% else %}<b>{{v}}</b>{% if not forloop.last %},{% endif %}{% endif %}
+{% endfor %}
+</div>
+{% if version == latest_version %}
+<div id="latest_version_link">
+You can pin sirikata to this latest version: <br/>
+<span class="small">meerkat:///{{ basepath }}/optimized/{{ basename }}</span>
+</div>
+{% endif %}
+</div>
 
 <div id="type_tabs">
     <ul>

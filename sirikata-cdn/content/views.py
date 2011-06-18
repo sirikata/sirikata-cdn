@@ -18,6 +18,7 @@ from users.middleware import save_upload_task, get_pending_upload, \
 
 from content.utils import get_file_metadata, get_hash, get_content_by_date
 from content.utils import add_base_metadata, delete_file_metadata
+from content.utils import get_versions
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
@@ -394,17 +395,36 @@ def delete_file(request, filename):
     
     return redirect('users.views.uploads')
 
-def view(request, filename):
-    try: file_metadata = get_file_metadata("/%s" % filename)
+def view(request, filename):    
+    split = filename.split("/")
+    try:
+        version = str(int(split[-1]))
+    except ValueError:
+        version = None
+
+    if version is None:
+        basename = split[-1]
+        basepath = filename
+    else:
+        basename = split[-2]
+        basepath = '/'.join(split[:-1])
+
+    versions = get_versions('/' + basepath)
+    latest_version = str(max(map(int, versions)))
+    if version is None:
+        version = latest_version
+        
+    try: file_metadata = get_file_metadata("/%s/%s" % (basepath, version))
     except NotFoundError: return HttpResponseNotFound()
     
     view_params = {'metadata': file_metadata}
     
-    split = filename.split("/")
-    view_params['version'] = split[-1:][0]
-    view_params['basename'] = split[-2:][0]
-    view_params['basepath'] = "/".join(split[:-1])
+    view_params['version'] = version
+    view_params['basename'] = basename
+    view_params['basepath'] = basepath
     view_params['fullpath'] = filename
+    view_params['all_versions'] = versions
+    view_params['latest_version'] = latest_version
     file_username = split[0]
     
     view_params['can_change'] = False
@@ -424,8 +444,8 @@ def view_json(request, filename):
     view_params = {'metadata': file_metadata}
     
     split = filename.split("/")
-    view_params['version'] = split[-1:][0]
-    view_params['basename'] = split[-2:][0]
+    view_params['version'] = split[-1]
+    view_params['basename'] = split[-2]
     view_params['basepath'] = "/".join(split[:-1])
     view_params['fullpath'] = filename
     response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')

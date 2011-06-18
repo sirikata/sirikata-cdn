@@ -167,6 +167,15 @@ def get_new_version_from_path(path, file_type):
 
     return latest
 
+def get_versions(path):
+    try:
+        rec = getRecord(NAMES, path, columns=['latest'])
+        latest = int(rec['latest'])
+        versions = getRecord(NAMES, path, columns=map(str, range(latest+1)))
+        return list(versions.iterkeys())
+    except NotFoundError:
+        return None
+
 def add_metadata(path, version_num, type_id, metadata):    
     rec = getRecord(NAMES, path, columns=[version_num])
     version_dict = json.loads(rec[version_num])

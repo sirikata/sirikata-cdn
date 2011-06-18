@@ -134,6 +134,9 @@ div.pagelet h2, div.pagelet table, div.pagelet tr, div.pagelet th, div.pagelet t
 div.pagelet h2 {
 	margin-bottom: 10px;
 }
+div.pagelet div {
+	margin: 10px;
+}
 div.pagelet table {
 	width: 100%;
 	border-collapse: collapse;
@@ -163,6 +166,16 @@ div.pagelet td {
 	padding-top: 2px;
 	padding-left: 1px;
 	padding-right: 1px;
+}
+div.pagelet a, ul.content_list a {
+	color: #1e538a;
+	text-decoration: none;
+}
+div.pagelet a:hover, ul.content_list a:hover {
+	color: #2779aa;
+}
+div.pagelet a:visited, ul.content_list a:visited {
+    color: #2779aa;
 }
 
 .small {
