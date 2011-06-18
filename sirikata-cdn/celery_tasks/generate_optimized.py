@@ -33,12 +33,8 @@ def generate_optimized(filename, typeid):
     
     mesh = collada.Collada(StringIO(dae_data), aux_file_loader=customImageLoader)
 
-    optimize_filters = ['combine_effects', 'combine_materials', 'triangulate',
-                        'combine_primitives', 'optimize_textures']
-    
-    for filter in optimize_filters:
-        inst = meshtool.filters.factory.getInstance(filter)
-        mesh = inst.apply(mesh)
+    full_opts = meshtool.filters.factory.getInstance('full_optimizations')
+    mesh = full_opts.apply(mesh)
     
     #Make sure image paths are just the base name
     current_prefix = "optimized"
