@@ -491,12 +491,22 @@ def dns(request, filename):
         return HttpResponseBadRequest()
     
     parts = filename.split("/")
-    if len(parts) < 4:
+    if len(parts) < 3:
         return HttpResponseBadRequest()
-    base_path = "/".join(parts[:-3])
-    type_id = parts[-3]
-    version_num = parts[-2]
+    
     requested_file = parts[-1]
+
+    try: version_num = str(int(parts[-2]))
+    except ValueError: version_num = None
+    
+    if version_num is None:
+        base_path = "/".join(parts[:-2])
+        type_id = parts[-2]
+        versions = get_versions('/' + base_path)
+        version_num = str(max(map(int, versions)))
+    else:
+        base_path = "/".join(parts[:-3])
+        type_id = parts[-3]
 
     try: file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
     except NotFoundError: return HttpResponseNotFound()
