@@ -15,19 +15,32 @@ def get_content_by_date(start="", limit=25):
         index_rows = getRecord(NAMESBYTIME, 'index_rows', columns=['0'])
     except DatabaseError:
         return {}, None
-    
+
     cur_index_row = index_rows[0].split(",")[-1]
-    
+
     content_paths = getColRange(NAMESBYTIME, cur_index_row, column_start=start,
                                 column_finish="", column_count=limit+1, column_reversed=True)
-    
+
+    print content_paths
     if len(content_paths) > limit:
         oldest_timestamp = min(content_paths.keys())
         next_start = str(oldest_timestamp)
         del content_paths[oldest_timestamp]
     else:
         next_start = None
-        
+
+    newest_timestamp = max(content_paths.keys())
+    prev_start = str(newest_timestamp + 1)
+    try:
+        newer_content = getColRange(NAMESBYTIME, cur_index_row, column_start=prev_start,
+                                    column_finish="", column_count=limit)
+    except NotFoundError, e:
+        newer_content = None
+    if newer_content:
+        prev_start = max(newer_content.keys())
+    else:
+        prev_start = None
+
     content_items = []
     multiget_keys = []
     for timestamp, path in content_paths.iteritems():
@@ -45,13 +58,13 @@ def get_content_by_date(start="", limit=25):
                                'base_name': base_name,
                                'prefix_path': prefix_path,
                                'full_path': "%s/%s" % (base_path, version_num)})
-    
+
     #TODO: This sucks. There is no way to issue a set of (rowkey, [columns]) to multiget
     # Instead, this is getting EVERY column, even though we only need the individual version
     # number for each record. This isn't TOO bad since the number of versions of each file
     # in practice will probably be low, but it's still unecessary load on the database
     name_recs = multiGetRecord(NAMES, multiget_keys)
-    
+
     found_items = []
     deleted_items = []
     for content_item in content_items:
@@ -61,31 +74,31 @@ def get_content_by_date(start="", limit=25):
             found_items.append(content_item)
         else:
             deleted_items.append(content_item)
-        
+
     #do some lazy index maintenance
     for content_item in deleted_items:
         try: removeColumns(NAMESBYTIME, cur_index_row, columns=[content_item['full_timestamp']])
         except DatabaseError: pass
-    
+
     found_items = sorted(found_items, key=operator.itemgetter("timestamp"), reverse=True)
-        
-    return found_items, next_start
-    
+
+    return found_items, next_start, prev_start
+
 
 def get_file_metadata(filename):
     split = filename.split("/")
-    
+
     version = split[-1:][0]
     file_key = "/".join(split[:-1])
-    
+
     try:
         rec = getRecord(NAMES, file_key, columns=[version, "type"])
     except DatabaseError:
         raise
-    
+
     if version not in rec:
         raise NotFoundError("Given file version not found")
-    
+
     version_data = json.loads(rec[version])
     version_data['type'] = rec['type']
     return version_data
@@ -95,7 +108,7 @@ def get_hash(hash):
         rec = getRecord(FILES, hash, columns=['data', 'mimetype'])
     except:
         raise
-    
+
     return rec
 
 def save_file_data(hash, data, mimetype):
@@ -107,13 +120,13 @@ def save_file_data(hash, data, mimetype):
         pass
     except DatabaseError:
         raise
-    
+
     try:
         rec = insertRecord(FILES, hash, columns={"data": data, "mimetype": mimetype})
     except DatabaseError:
         raise DatabaseError()
-    
-def save_file_name(path, version_num, hash_key, length):    
+
+def save_file_name(path, version_num, hash_key, length):
     dict = {'hash': hash_key, 'size': length}
     col_val = json.dumps(dict)
     insertRecord(NAMES, path, columns={version_num: col_val})
@@ -124,22 +137,22 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, zip_ke
         version_dict = json.loads(rec[version_num])
     except NotFoundError:
         version_dict = {}
-    
+
     create_index = False
     if 'types' not in version_dict:
         version_dict['types'] = {}
         create_index = True
-    
+
     if 'title' not in version_dict:
         version_dict['title'] = title
     if 'description' not in version_dict:
         version_dict['description'] = description
-    
+
     version_dict['types'][type_id] = {'hash': hash_key,
                                       'size': length,
                                       'subfiles': subfile_names,
                                       'zip': zip_key}
-    
+
     insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
 
     if create_index:
@@ -147,16 +160,16 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, zip_ke
             index_rows = getRecord(NAMESBYTIME, "index_rows", columns=['0'])
         except NotFoundError:
             index_rows = None
-        
+
         if index_rows is None:
             insertRecord(NAMESBYTIME, "index_rows", columns={"0": "0"})
             cur_index_row = "0"
         else:
             cur_index_row = index_rows[0].split(",")[-1]
-    
+
         insertRecord(NAMESBYTIME, cur_index_row, {long(time.time() * 1e6) : "%s/%s" % (path, version_num)})
 
-def get_new_version_from_path(path, file_type):    
+def get_new_version_from_path(path, file_type):
     try:
         rec = getRecord(NAMES, path, columns=["latest"])
         latest = str(int(rec['latest'])+1)
@@ -176,27 +189,27 @@ def get_versions(path):
     except NotFoundError:
         return None
 
-def add_metadata(path, version_num, type_id, metadata):    
+def add_metadata(path, version_num, type_id, metadata):
     rec = getRecord(NAMES, path, columns=[version_num])
     version_dict = json.loads(rec[version_num])
-    
+
     if 'types' not in version_dict:
         raise DatabaseError()
     if type_id not in version_dict['types']:
         raise DatabaseError()
-    
+
     for key, val in metadata.iteritems():
         version_dict['types'][type_id][key] = val
-    
+
     insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
-    
-def add_base_metadata(path, version_num, metadata):    
+
+def add_base_metadata(path, version_num, metadata):
     rec = getRecord(NAMES, path, columns=[version_num])
     version_dict = json.loads(rec[version_num])
-       
+
     for key, val in metadata.iteritems():
         version_dict[key] = val
-    
+
     insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
 
 def delete_file_metadata(path, version_num):

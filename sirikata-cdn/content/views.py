@@ -35,8 +35,9 @@ def json_handler(obj):
         raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(Obj), repr(Obj))
 
 def browse(request, start=""):
-    content_items, next_start = get_content_by_date(start=start)
-    view_params = {'content_items': content_items, 'next_start': next_start}
+    content_items, next_start, prev_start = get_content_by_date(start=start)
+    view_params = {'content_items': content_items, 'next_start': next_start,
+                   'prev_start': prev_start }
     return render_to_response('content/browse.html', view_params, context_instance = RequestContext(request))
 
 def browse_json(request, start=""):
@@ -67,7 +68,7 @@ def upload_choice(request, task_id):
         names = res.result.names
     else:
         return HttpResponseForbidden()
-    
+
     if request.method == 'POST':
         form = UploadChoiceForm(task_id, names, request.POST)
         if form.is_valid():
@@ -75,9 +76,9 @@ def upload_choice(request, task_id):
             for id,value in form.fields['file'].choices:
                 if id == selected_dae:
                     selected_name = value
-                    
+
             task = import_upload.delay(upload_rec['main_rowkey'], upload_rec['subfiles'], selected_name)
-            
+
             save_upload_task(username=request.session['username'],
                              task_id=task.task_id,
                              row_key=upload_rec['main_rowkey'],
@@ -90,13 +91,13 @@ def upload_choice(request, task_id):
                 remove_pending_upload(request.session['username'], task_id)
             except:
                 return HttpResponseServerError("There was an error removing your old upload record.")
-            
+
             return redirect('content.views.upload_processing', task_id=task.task_id)
     else:
         form = UploadChoiceForm(task_id, names)
-    
+
     view_params = {'task_id':task_id, 'form':form}
-    
+
     return render_to_response('content/upload_choice.html', view_params, context_instance = RequestContext(request))
 
 class UploadForm(forms.Form):
@@ -110,7 +111,7 @@ class UploadForm(forms.Form):
 def upload(request, task_id=None):
     if not request.user['is_authenticated']:
         return redirect('users.views.login')
-    
+
     if task_id:
         try:
             upload_rec = get_pending_upload(request.session['username'], task_id)
@@ -125,7 +126,7 @@ def upload(request, task_id=None):
             names = res.result.names
         else:
             return HttpResponseForbidden()
-    
+
     if request.method == 'POST':
         if task_id:
             form = UploadForm(names, request.POST, request.FILES)
@@ -133,7 +134,7 @@ def upload(request, task_id=None):
                 subfiles = subfiles_uploaded
                 for n in names:
                     subfiles[n] = request.FILES[n].row_key
-                    
+
                 task = import_upload.delay(upload_rec['main_rowkey'], subfiles, upload_rec['dae_choice'])
 
                 save_upload_task(username=request.session['username'],
@@ -148,9 +149,9 @@ def upload(request, task_id=None):
                     remove_pending_upload(request.session['username'], task_id)
                 except:
                     return HttpResponseServerError("There was an error removing your old upload record.")
-                
+
                 return redirect('content.views.upload_processing', task_id=task.task_id)
-                
+
             else:
                 view_params = {'form':form, 'existing_files':existing_files}
         else:
@@ -158,7 +159,7 @@ def upload(request, task_id=None):
             if form.is_valid():
                 upfile = request.FILES['File']
                 task = import_upload.delay(upfile.row_key, subfiles={})
-                
+
                 save_upload_task(username=request.session['username'],
                                  task_id=task.task_id,
                                  row_key=upfile.row_key,
@@ -166,7 +167,7 @@ def upload(request, task_id=None):
                                  subfiles={},
                                  dae_choice="",
                                  task_name="import_upload")
-                
+
                 return redirect('content.views.upload_processing', task_id=task.task_id)
             else:
                 view_params = {'form':form}
@@ -177,26 +178,26 @@ def upload(request, task_id=None):
         else:
             form = UploadForm(['File'])
             view_params = {'form':form}
-            
+
     view_params['task_id'] = task_id
     return render_to_response('content/upload.html', view_params, context_instance = RequestContext(request))
 
 def upload_processing(request, task_id='', action=False):
     if not request.user['is_authenticated']:
         return redirect('users.views.login')
-    
+
     try:
         upload_rec = get_pending_upload(request.session['username'], task_id)
     except:
         return HttpResponseForbidden()
-    
+
     res = AsyncResult(task_id)
-    
+
     xhr = request.GET.has_key('xhr')
     if xhr:
         json_result = {'state':res.state}
         return HttpResponse(simplejson.dumps(json_result, default=json_handler), mimetype='application/json')
-    
+
     if action == 'confirm':
         if upload_rec['task_name'] == 'import_upload':
             try:
@@ -224,7 +225,7 @@ def upload_processing(request, task_id='', action=False):
                 return HttpResponseServerError("There was an error removing your upload record.")
             messages.info(request, 'Upload saved')
             return redirect('users.views.uploads')
-            
+
     erase = False
     edit_link = False
     error_message = None
@@ -258,7 +259,7 @@ def upload_processing(request, task_id='', action=False):
         else:
             success_message = "File was imported successfully. Click 'Continue' to save."
             edit_link = reverse('content.views.upload_processing', args=['confirm', task_id])
-    
+
     view_params = {'task_id': task_id,
                    'task_state': res.state,
                    'error_message': error_message,
@@ -288,7 +289,7 @@ class UploadImport(forms.Form):
 def upload_import(request, task_id):
     if not request.user['is_authenticated']:
         return redirect('users.views.login')
-    
+
     try:
         upload_rec = get_pending_upload(request.session['username'], task_id)
     except:
@@ -300,17 +301,17 @@ def upload_import(request, task_id):
 
     filename = upload_rec['filename']
     filename_base = filename.split(".")[0]
-    
+
     if request.method == 'POST':
         form = UploadImport(request.POST)
         if form.is_valid():
             title = form.cleaned_data['title']
             path = "/%s/%s" % (request.session['username'], form.cleaned_data['path'])
             description = form.cleaned_data['description']
-            
+
             task = place_upload.delay(upload_rec['main_rowkey'], upload_rec['subfiles'],
                                       title, path, description, selected_dae=upload_rec['dae_choice'])
-            
+
             save_upload_task(username=request.session['username'],
                              task_id=task.task_id,
                              row_key=upload_rec['main_rowkey'],
@@ -318,21 +319,21 @@ def upload_import(request, task_id):
                              subfiles=upload_rec['subfiles'],
                              dae_choice=upload_rec['dae_choice'],
                              task_name="place_upload")
-            
+
             try:
                 remove_pending_upload(request.session['username'], task_id)
             except:
                 return HttpResponseServerError("There was an error removing your old upload record.")
-            
+
             return redirect('content.views.upload_processing', task_id=task.task_id)
-            
+
     else:
         if res.result is None:
             default_filename = filename
         else:
             default_filename = res.result
         form = UploadImport(initial={'path':default_filename, 'title':filename_base.capitalize()})
-    
+
     view_params = {'form': form,
                    'task_id': task_id,
                    'filename': filename}
@@ -350,31 +351,31 @@ class EditFile(forms.Form):
 def edit_file(request, filename):
     try: file_metadata = get_file_metadata("/%s" % filename)
     except NotFoundError: return HttpResponseNotFound()
-    
+
     split = filename.split("/")
     file_username = split[0]
     basepath = "/" + "/".join(split[:-1])
     version = split[-1:][0]
-    
+
     if file_username != request.user.get('username'):
         return HttpResponseForbidden()
-    
+
     if request.method == 'POST':
         form = EditFile(request.POST)
         if form.is_valid():
             title = form.cleaned_data['title']
             description = form.cleaned_data['description']
-            
+
             try:
                 updated_info = {'title': title, 'description': description}
                 add_base_metadata(basepath, version, updated_info)
             except:
                 return HttpResponseServerError("There was an error editing your file.")
-            
+
             return redirect('content.views.view', filename)
     else:
         form = EditFile(initial={'title':file_metadata['title'], 'description':file_metadata['description']})
-    
+
     view_params = {'form': form,
                    'filename': filename}
     return render_to_response('content/edit.html', view_params, context_instance = RequestContext(request))
@@ -382,20 +383,20 @@ def edit_file(request, filename):
 def delete_file(request, filename):
     try: file_metadata = get_file_metadata("/%s" % filename)
     except NotFoundError: return HttpResponseNotFound()
-    
+
     split = filename.split("/")
     file_username = split[0]
     basepath = "/" + "/".join(split[:-1])
     version = split[-1:][0]
-    
+
     if file_username != request.user.get('username'):
         return HttpResponseForbidden()
-    
+
     delete_file_metadata(basepath, version)
-    
+
     return redirect('users.views.uploads')
 
-def view(request, filename):    
+def view(request, filename):
     split = filename.split("/")
     try:
         version = str(int(split[-1]))
@@ -413,12 +414,12 @@ def view(request, filename):
     latest_version = str(max(map(int, versions)))
     if version is None:
         version = latest_version
-        
+
     try: file_metadata = get_file_metadata("/%s/%s" % (basepath, version))
     except NotFoundError: return HttpResponseNotFound()
-    
+
     view_params = {'metadata': file_metadata}
-    
+
     view_params['version'] = version
     view_params['basename'] = basename
     view_params['basepath'] = basepath
@@ -426,11 +427,11 @@ def view(request, filename):
     view_params['all_versions'] = versions
     view_params['latest_version'] = latest_version
     file_username = split[0]
-    
+
     view_params['can_change'] = False
     if file_username == request.user.get('username'):
         view_params['can_change'] = True
-    
+
     if file_metadata['type'] == 'image':
         html_page = 'content/view_image.html'
     else:
@@ -440,9 +441,9 @@ def view(request, filename):
 def view_json(request, filename):
     try: file_metadata = get_file_metadata("/%s" % filename)
     except NotFoundError: return HttpResponseNotFound()
-    
+
     view_params = {'metadata': file_metadata}
-    
+
     split = filename.split("/")
     view_params['version'] = split[-1]
     view_params['basename'] = split[-2]
@@ -489,7 +490,7 @@ def download(request, hash, filename=None):
 def dns(request, filename):
     if request.method != 'HEAD':
         return HttpResponseBadRequest()
-    
+
     parts = filename.split("/")
     if len(parts) < 4:
         return HttpResponseBadRequest()
@@ -501,10 +502,10 @@ def dns(request, filename):
     try: file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
     except NotFoundError: return HttpResponseNotFound()
     except: return HttpResponseServerError()
-    
+
     if type_id not in file_metadata['types']:
         return HttpResponseNotFound()
-    
+
     if requested_file == posixpath.basename(base_path):
         hash = file_metadata['types'][type_id]['hash']
         file_size = file_metadata['types'][type_id]['size']
@@ -514,14 +515,14 @@ def dns(request, filename):
             (subfile_base, vers) = posixpath.split(subfile)
             subfile_basename = posixpath.basename(subfile_base)
             subfile_map[subfile_basename] = subfile
-        
+
         if requested_file not in subfile_map:
             return HttpResponseNotFound()
-        
+
         subfile_metadata = get_file_metadata(subfile_map[requested_file])
         hash = subfile_metadata['hash']
         file_size = subfile_metadata['size']
-    
+
     response = HttpResponse()
     response['Hash'] = hash
     response['File-Size'] = file_size

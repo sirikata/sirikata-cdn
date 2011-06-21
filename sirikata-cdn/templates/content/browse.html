@@ -27,9 +27,20 @@
 {% endfor %}
 </ul>
 
-{% if next_start %}
-<br>
-<a href="{% url content.views.browse next_start %}">Older</a>
-{% endif %}
+<br />
+
+<div style = 'float: left'>
+    {% if next_start %}
+    <a href="{% url content.views.browse next_start %}">Older</a>
+    {% endif %}
+</div>
+
+<div style = 'float: right'>
+    {% if prev_start %}
+    <a href="{% url content.views.browse prev_start %}">Newer</a>
+    {% endif %}
+</div>
+
+<div style = 'clear: both'></div>
 
 {% endblock main_content %}
