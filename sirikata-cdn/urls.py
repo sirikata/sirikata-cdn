@@ -23,6 +23,7 @@ urlpatterns = patterns('',
     (r'^api/modelinfo/(?P<filename>[\w\-\./]+)$', 'content.views.view_json'),
     (r'^api/browse/(?P<start>[0-9]*)$', 'content.views.browse_json'),
     (r'^(?P<start>[0-9]*)$', 'content.views.browse'),
+    (r'^profile/(?P<username>\w+)$', 'users.views.profile'),
 )
 
 if settings.DEBUG:

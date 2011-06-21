@@ -20,7 +20,7 @@
     <span class="title">{{ item.metadata.title|truncate_chars:15 }}</span>
     </a><br>
     <span class="timeago">{{ item.timestamp|timesince }} ago </span><br>
-    {{ item.username }} <br>
+    <a href = "{% url users.views.profile item.username %}">{{ item.username }}</a> <br>
     </li>
 {% empty %}
     <li>No content!</li>

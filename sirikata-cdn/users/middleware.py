@@ -13,16 +13,16 @@ def get_pending_uploads(username):
         return []
 
     records = []
-    
+
     for colkey, (value, timestamp) in pending_range.iteritems():
         task_id = colkey.split(":")[1]
         values = json.loads(value)
         values['task_id'] = task_id
         values['timestamp'] = datetime.datetime.fromtimestamp(timestamp / 1e6)
         records.append(values)
-    
+
     records = sorted(records, key=operator.itemgetter("timestamp"), reverse=True)
-    
+
     return records
 
 def get_uploads(username):
@@ -32,20 +32,20 @@ def get_uploads(username):
     except DatabaseError:
         return []
 
-    records = []    
+    records = []
     for colkey, (value, timestamp) in upload_range.iteritems():
         values = {}
         values['path'] = colkey.split(":")[1]
         values['timestamp'] = datetime.datetime.fromtimestamp(timestamp / 1e6)
         records.append(values)
-    
+
     records = sorted(records, key=operator.itemgetter("timestamp"), reverse=True)
-    
+
     return records
 
 def get_pending_upload(username, task_id):
     col_key = "uploading:%s" % task_id
-    
+
     pending = getRecord(USERS, username, columns=[col_key])
 
     values = json.loads(pending[col_key])
@@ -54,7 +54,7 @@ def get_pending_upload(username, task_id):
 
 def remove_pending_upload(username, task_id):
     col_key = "uploading:%s" % task_id
-    
+
     removeColumns(USERS, username, columns=[col_key])
 
 def save_upload_task(username, task_id, row_key, filename, subfiles, dae_choice, task_name):
@@ -91,7 +91,7 @@ def associate_openid_login(request, identity_url, openid_email, openid_name, use
         pass
     except DatabaseError:
         raise
-    
+
     columns = {'name':name,
                'email':email,
                'openid_identity':identity_url,
@@ -101,7 +101,7 @@ def associate_openid_login(request, identity_url, openid_email, openid_name, use
         insertRecord(USERS, username, columns)
     except DatabaseError:
         return False
-    
+
     request.session['username'] = username
     invalidate_user_cache(request)
     return True
@@ -115,18 +115,23 @@ def invalidate_user_cache(request):
     if hasattr(request, '_cached_user'):
         delattr(request, '_cached_user')
 
+def get_user_by_username(username):
+    try:
+        cass_user = getRecord(USERS, str(username), columns=['name', 'email'])
+        user = {}
+        user['username'] = username
+        user['name'] = cass_user['name']
+        user['email'] = cass_user['email']
+        return user
+    except DatabaseError:
+        return None
+
 def get_user(request):
     if 'username' in request.session:
-        try:
-            cass_user = getRecord(USERS, str(request.session['username']), columns=['name', 'email'])
-            user = {}
-            user['username'] = request.session['username']
-            user['name'] = cass_user['name']
-            user['email'] = cass_user['email']
+        user = get_user_by_username(request.session['username'])
+        if user:
             user['is_authenticated'] = True
             return user
-        except DatabaseError:
-            pass
     return {'password': None, 'is_authenticated': False}
 
 class LazyUser(object):
