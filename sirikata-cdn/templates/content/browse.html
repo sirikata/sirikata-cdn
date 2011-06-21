@@ -43,4 +43,11 @@
 
 <div style = 'clear: both'></div>
 
+<br />
+Show
+<a href="{% url content.views.browse start %}?count=25">25</a>,
+<a href="{% url content.views.browse start %}?count=50">50</a>,
+<a href="{% url content.views.browse start %}?count=100">100</a>
+items.
+
 {% endblock main_content %}

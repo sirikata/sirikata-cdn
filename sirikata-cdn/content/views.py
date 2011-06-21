@@ -35,9 +35,14 @@ def json_handler(obj):
         raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(Obj), repr(Obj))
 
 def browse(request, start=""):
-    content_items, next_start, prev_start = get_content_by_date(start=start)
-    view_params = {'content_items': content_items, 'next_start': next_start,
-                   'prev_start': prev_start }
+    count = int(request.GET.get('count', 2))
+    content_items, next_start, prev_start = get_content_by_date(start=start, limit=count)
+    view_params = {
+        'content_items': content_items,
+        'start': start,
+        'next_start': next_start,
+        'count': count,
+    }
     return render_to_response('content/browse.html', view_params, context_instance = RequestContext(request))
 
 def browse_json(request, start=""):
