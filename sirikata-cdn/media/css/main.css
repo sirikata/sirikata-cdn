@@ -274,3 +274,15 @@ input.clip_url {
 	margin: 0;
 	width: 330px;
 }
+
+div#title_accordian div {
+	margin: 0;
+	padding: 15px 20px 15px 20px;
+}
+div#title_accordian p {
+    margin: 0;
+    padding: 0;
+}
+div#title_accordian p + p {
+    margin: 20px 0px 0px 0px;
+}

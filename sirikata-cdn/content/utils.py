@@ -4,7 +4,7 @@ import time
 import datetime
 import operator
 import posixpath
-from users.middleware import remove_file_upload
+from users.middleware import remove_file_upload, save_file_upload
 
 NAMES = getColumnFamily('Names')
 FILES = getColumnFamily('Files')
@@ -189,6 +189,38 @@ def add_metadata(path, version_num, type_id, metadata):
         version_dict['types'][type_id][key] = val
     
     insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
+    
+def copy_file(frompath, fromversion, topath, updated_metadata=None):
+    rec = getRecord(NAMES, frompath, columns=[fromversion, 'type'])
+    version_dict = json.loads(rec[fromversion])
+    file_type = rec['type']
+    
+    if updated_metadata:
+        for key, val in updated_metadata.iteritems():
+            version_dict[key] = val
+    
+    for type in version_dict['types']:
+        prev_subfiles = version_dict['types'][type]['subfiles']
+        new_subfiles = []
+        for subfile in prev_subfiles:
+            prev_sub_split = subfile.split('/')
+            prev_sub_vers = prev_sub_split[-1]
+            prev_sub_path = '/'.join(prev_sub_split[:-1])
+            subrec = getRecord(NAMES, prev_sub_path, columns=['type', prev_sub_vers])
+            prev_sub_path = prev_sub_path[len(frompath):]
+            prev_type = subrec['type']
+            new_sub_path = topath + prev_sub_path
+            new_subfile_version = get_new_version_from_path(new_sub_path, file_type=prev_type)
+            insertRecord(NAMES, new_sub_path, columns={new_subfile_version: subrec[prev_sub_vers]})
+            new_sub_path = new_sub_path + '/' + new_subfile_version
+            new_subfiles.append(new_sub_path)
+        version_dict['types'][type]['subfiles'] = new_subfiles
+    
+    new_file_version = get_new_version_from_path(topath, file_type=file_type)
+    insertRecord(NAMES, topath, columns={new_file_version: json.dumps(version_dict)})
+    save_file_upload(topath.split('/')[1], topath)
+    
+    return topath + '/' + new_file_version
     
 def add_base_metadata(path, version_num, metadata):    
     rec = getRecord(NAMES, path, columns=[version_num])

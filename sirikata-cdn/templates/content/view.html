@@ -38,13 +38,15 @@
         <p class="bold">
         {{ metadata.description|linebreaksbr|default:"<em>No description</em>" }}
         </p>
-        {% if can_change %}
-        <br>
         <p>
+            {% if can_change %}
 	        <a class="button" href="{% url content.views.edit_file fullpath %}">Edit</a>
 	        <a id='delete_button' class="button" href="{% url content.views.delete_file fullpath %}">Delete</a>
+	        {% endif %}
+	        {% if can_clone %}
+	        <a class="button" href="{% url content.views.clone_file fullpath %}">Clone</a>
+	        {% endif %}
         </p>
-        {% endif %}
     </div>
 </div>
 

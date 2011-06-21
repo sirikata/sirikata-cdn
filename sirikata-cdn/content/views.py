@@ -18,7 +18,7 @@ from users.middleware import save_upload_task, get_pending_upload, \
 
 from content.utils import get_file_metadata, get_hash, get_content_by_date
 from content.utils import add_base_metadata, delete_file_metadata
-from content.utils import get_versions
+from content.utils import get_versions, copy_file
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
@@ -395,6 +395,57 @@ def delete_file(request, filename):
     
     return redirect('users.views.uploads')
 
+class CloneFile(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(CloneFile, self).__init__(*args, **kwargs)
+        self.fields['title'] = forms.CharField(required=True, min_length=1, max_length=100, widget=forms.TextInput(attrs={
+            'class': '{required:true, minlength:1, maxlength:100}'
+        }))
+        self.fields['path'] = forms.CharField(required=True, min_length=2, max_length=100, widget=forms.TextInput(attrs={
+            'class': '{required:true, minlength:2, maxlength:100}'
+        }))
+        self.fields['description'] = forms.CharField(required=False, max_length=1000, widget=forms.Textarea(attrs={
+            'class': '{maxlength:1000}'
+        }))
+    def clean_path(self):
+        path = self.cleaned_data['path']
+        if not re.match("^[A-Za-z0-9_\.\-/]*$", path):
+            raise forms.ValidationError("Valid characters are letters, numbers, and [._-/].")
+        return path
+
+def clone_file(request, filename):
+    if not request.user['is_authenticated']:
+        return redirect('users.views.login')
+    
+    try: file_metadata = get_file_metadata("/%s" % filename)
+    except NotFoundError: return HttpResponseNotFound()
+    
+    split = filename.split("/")
+    file_username = split[0]
+    basepath = "/" + "/".join(split[:-1])
+    postpath = "/".join(split[1:-1])
+    version = split[-1:][0]
+    
+    if request.method == 'POST':
+        form = CloneFile(request.POST)
+        if form.is_valid():
+            title = form.cleaned_data['title']
+            description = form.cleaned_data['description']
+            path = "/%s/%s" % (request.session['username'], form.cleaned_data['path'])
+            updated_info = {'title': title, 'description': description}
+            try:
+                new_filename = copy_file(basepath, version, path, updated_info)
+            except:
+                return HttpResponseServerError("There was an error cloning your file.")
+            return redirect('content.views.view', new_filename[1:])
+    else:
+        form = CloneFile(initial={'path':postpath, 'title':file_metadata['title'], 'description':file_metadata['description']})
+    
+    view_params = {}
+    view_params['clone_path'] = filename
+    view_params['form'] = form
+    return render_to_response('content/clone.html', view_params, context_instance = RequestContext(request))
+
 def view(request, filename):    
     split = filename.split("/")
     try:
@@ -430,6 +481,10 @@ def view(request, filename):
     view_params['can_change'] = False
     if file_username == request.user.get('username'):
         view_params['can_change'] = True
+        
+    view_params['can_clone'] = False
+    if request.user['is_authenticated'] and file_username != request.user.get('username'):
+        view_params['can_clone'] = True
     
     if file_metadata['type'] == 'image':
         html_page = 'content/view_image.html'
