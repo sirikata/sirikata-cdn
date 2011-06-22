@@ -167,14 +167,14 @@ div.pagelet td {
 	padding-left: 1px;
 	padding-right: 1px;
 }
-div.pagelet a, ul.content_list a {
+body a {
 	color: #1e538a;
 	text-decoration: none;
 }
-div.pagelet a:hover, ul.content_list a:hover {
+body a:hover {
 	color: #2779aa;
 }
-div.pagelet a:visited, ul.content_list a:visited {
+body a:visited {
     color: #2779aa;
 }
 
