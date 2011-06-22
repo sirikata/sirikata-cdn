@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% load truncate_filters_extra %}
+
+{% block title %}{{ block.super }} | {{ username }}{% endblock title %}
+
+{% block main_content %}
+<h2>{{ username }}</h2>
+<ul>
+{% for up in uploaded %}
+    <li>{{ up.timestamp|date:"M-d-Y g:iA" }} -
+    <a href="{% url content.views.view up.path|slice:"1:" %}">{{ up.path }}</a></li>
+{% endfor %}
+</ul>
+
+{% endblock main_content %}

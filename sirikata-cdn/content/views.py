@@ -47,6 +47,7 @@ def browse(request, start=""):
     }
     return render_to_response('content/browse.html', view_params, context_instance = RequestContext(request))
 
+
 def browse_json(request, start=""):
     content_items, next_start = get_content_by_date(start=start)
     view_params = {'content_items': content_items, 'next_start': next_start}
@@ -418,6 +419,10 @@ def view(request, filename):
         basepath = '/'.join(split[:-1])
 
     versions = get_versions('/' + basepath)
+    if versions is None:
+        # basepath is just username.
+        return redirect('users.views.profile', basepath)
+
     latest_version = str(max(map(int, versions)))
     if version is None:
         version = latest_version
