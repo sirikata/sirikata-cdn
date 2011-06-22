@@ -21,7 +21,6 @@ def get_content_by_date(start="", limit=25):
     content_paths = getColRange(NAMESBYTIME, cur_index_row, column_start=start,
                                 column_finish="", column_count=limit+1, column_reversed=True)
 
-    print content_paths
     if len(content_paths) > limit:
         oldest_timestamp = min(content_paths.keys())
         next_start = str(oldest_timestamp)
