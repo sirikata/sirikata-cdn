@@ -36,7 +36,9 @@ def json_handler(obj):
 
 def browse(request, start=""):
     view = request.GET.get('view', 'icon')
-    count = int(request.GET.get('count', 2))
+    try: count = int(request.GET.get('count', 2))
+    except ValueError: count = 2
+    
     content_items, next_start, prev_start = get_content_by_date(start=start, limit=count)
     view_params = {
         'content_items': content_items,
