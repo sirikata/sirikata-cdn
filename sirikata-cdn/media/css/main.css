@@ -266,3 +266,13 @@ ul.content_list span.timeago {
     font-size: 0.8em;
     font-style: italic;
 }
+
+div#top_listing_bar {
+    text-align: right;
+}
+div#top_listing_bar div {
+	display: inline;
+}
+div#top_listing_bar div + div {
+    margin-left: 10px;
+}

@@ -5,11 +5,22 @@
 
 {% block main_content %}
 
-{% if view == 'icon' %}
-    Icon | <a href = "{% url content.views.browse start %}?count={{ count }}&view=list">List</a>
-{% else %}
-    <a href = "{% url content.views.browse start %}?count={{ count }}&view=icon">Icon</a> | List
-{% endif %}
+<div id="top_listing_bar">
+	<div>
+		{% if view == 'icon' %}
+		    Icon | <a href = "{% url content.views.browse start %}?count={{ count }}&view=list">List</a>
+		{% else %}
+		    <a href = "{% url content.views.browse start %}?count={{ count }}&view=icon">Icon</a> | List
+		{% endif %}
+	</div>
+	<div>
+		Show
+		<a href="{% url content.views.browse start %}?count=25&view={{ view }}">25</a>,
+		<a href="{% url content.views.browse start %}?count=50&view={{ view }}">50</a>,
+		<a href="{% url content.views.browse start %}?count=100&view={{ view }}">100</a>
+		items.
+	</div>
+</div>
 
 {% if view == 'icon' %}
     <ul class="content_list">
@@ -43,27 +54,15 @@
     </ul>
 {% endif %}
 
-<br />
-
-<div style = 'float: left'>
+{% if next_start or prev_start %}
+<div id="listing_nav">
     {% if next_start %}
     <a href="{% url content.views.browse next_start %}">Older</a>
     {% endif %}
-</div>
-
-<div style = 'float: right'>
     {% if prev_start %}
     <a href="{% url content.views.browse prev_start %}">Newer</a>
     {% endif %}
 </div>
-
-<div style = 'clear: both'></div>
-
-<br />
-Show
-<a href="{% url content.views.browse start %}?count=25&view={{ view }}">25</a>,
-<a href="{% url content.views.browse start %}?count=50&view={{ view }}">50</a>,
-<a href="{% url content.views.browse start %}?count=100&view={{ view }}">100</a>
-items.
+{% endif %}
 
 {% endblock main_content %}
