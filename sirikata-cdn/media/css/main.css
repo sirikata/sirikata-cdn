@@ -236,7 +236,7 @@ ul.content_list li {
 	margin: 0;
 	padding: 0;
     width: 160px;
-    height: 160px;
+    height: 165px;
     list-style-type: none;
     word-wrap: break-word;
     overflow-y: hidden;
@@ -275,4 +275,17 @@ div#top_listing_bar div {
 }
 div#top_listing_bar div + div {
     margin-left: 10px;
+}
+
+table#mesh_list {
+    width: 80%;
+}
+table#mesh_list th {
+    text-align: left;
+}
+
+img.tiny_thumbnail {
+    width: 25px;
+    height: 25px;
+    vertical-align: middle;
 }
