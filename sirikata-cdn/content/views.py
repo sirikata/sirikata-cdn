@@ -34,18 +34,24 @@ def json_handler(obj):
     else:
         raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(Obj), repr(Obj))
 
-def browse(request, start=""):
+def browse(request):
+    start = request.GET.get('start', '')
     view = request.GET.get('view', 'icon')
     try: count = int(request.GET.get('count', 2))
-    except ValueError: count = 2
-    
-    content_items, next_start, prev_start = get_content_by_date(start=start, limit=count)
+    except ValueError: count = 25
+    try: reverse = bool(int(request.GET.get('reverse', True)))
+    except ValueError: reverse = True
+
+    (content_items, older_start, newer_start,
+     oldest_timestamp, newest_timestamp) = get_content_by_date(start=start, limit=count, reverse=reverse)
     view_params = {
         'content_items': content_items,
-        'start': start,
-        'next_start': next_start,
-        'count': count,
+        'older_start': older_start,
+        'newer_start': newer_start,
+        'get_params': request.GET,
         'view': view,
+        'oldest_timestamp': oldest_timestamp,
+        'newest_timestamp': newest_timestamp
     }
     return render_to_response('content/browse.html', view_params, context_instance = RequestContext(request))
 

@@ -10,7 +10,7 @@ NAMES = getColumnFamily('Names')
 FILES = getColumnFamily('Files')
 NAMESBYTIME = getColumnFamily('NameTimestampIndex')
 
-def get_content_by_date(start="", limit=25):
+def get_content_by_date(start="", limit=25, reverse=True):
     try:
         index_rows = getRecord(NAMESBYTIME, 'index_rows', columns=['0'])
     except DatabaseError:
@@ -19,26 +19,25 @@ def get_content_by_date(start="", limit=25):
     cur_index_row = index_rows[0].split(",")[-1]
 
     content_paths = getColRange(NAMESBYTIME, cur_index_row, column_start=start,
-                                column_finish="", column_count=limit+1, column_reversed=True)
+                                column_finish="", column_count=limit+1, column_reversed=reverse)
 
-    if len(content_paths) > limit:
-        oldest_timestamp = min(content_paths.keys())
-        next_start = str(oldest_timestamp)
-        del content_paths[oldest_timestamp]
-    else:
-        next_start = None
+    older_start = None
+    newer_start = None
 
+    oldest_timestamp = min(content_paths.keys())
     newest_timestamp = max(content_paths.keys())
-    prev_start = str(newest_timestamp + 1)
-    try:
-        newer_content = getColRange(NAMESBYTIME, cur_index_row, column_start=prev_start,
-                                    column_finish="", column_count=limit)
-    except NotFoundError, e:
-        newer_content = None
-    if newer_content:
-        prev_start = max(newer_content.keys())
+
+    if reverse:
+        if len(content_paths) > limit:
+            older_start = str(oldest_timestamp)
+            del content_paths[oldest_timestamp]
+        if start != "":
+            newer_start = str(newest_timestamp + 1)
     else:
-        prev_start = None
+        older_start = str(oldest_timestamp - 1)
+        if len(content_paths) > limit:
+            newer_start = str(newest_timestamp + 1)
+            del content_paths[newest_timestamp]
 
     content_items = []
     multiget_keys = []
@@ -81,7 +80,7 @@ def get_content_by_date(start="", limit=25):
 
     found_items = sorted(found_items, key=operator.itemgetter("timestamp"), reverse=True)
 
-    return found_items, next_start, prev_start
+    return found_items, older_start, newer_start, oldest_timestamp, newest_timestamp
 
 
 def get_file_metadata(filename):

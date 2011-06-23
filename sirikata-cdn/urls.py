@@ -22,7 +22,7 @@ urlpatterns = patterns('',
     (r'^logout/$', 'users.views.logout'),
     (r'^api/modelinfo/(?P<filename>[\w\-\./]+)$', 'content.views.view_json'),
     (r'^api/browse/(?P<start>[0-9]*)$', 'content.views.browse_json'),
-    (r'^(?P<start>[0-9]*)$', 'content.views.browse'),
+    (r'^$', 'content.views.browse'),
     (r'^profile/(?P<username>\w+)$', 'users.views.profile'),
 )
 
