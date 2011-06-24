@@ -42,7 +42,8 @@ def get_content_by_date(start="", limit=25, reverse=True):
         del content_paths[oldest_timestamp]
         if len(content_paths) > limit:
             del content_paths[newest_timestamp]
-            newer_start = str(max(content_paths.keys()))
+            newest_timestamp = max(content_paths.keys())
+            newer_start = str(newest_timestamp)
 
     content_items = []
     multiget_keys = []
