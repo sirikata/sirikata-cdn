@@ -4,9 +4,9 @@
 
 {% block js_includes %}
 {{ block.super }}
-<script type="text/javascript"> 
+<script type="text/javascript">
     $(document).ready(function() {
-    	$( "#title_accordian" ).accordion();
+    	$( "#title_accordion" ).accordion();
         $("#type_tabs").tabs();
         $( "#delete-dialog-confirm" ).dialog({
             resizable: false,
@@ -28,11 +28,11 @@
         });
     });
 </script>
-{% endblock js_includes %} 
+{% endblock js_includes %}
 
 {% block main_content %}
 
-<div id="title_accordian">
+<div id="title_accordion">
     <h3><a href="#">{{ metadata.title }}</a></h3>
     <div>
         <p class="bold">
