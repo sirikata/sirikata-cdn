@@ -16,7 +16,7 @@
 	</div>
 	<div>
 		Show
-		<a href="{% url content.views.browse %}{% if not older_start %}{% add_get_parameter start=older_start,reverse=0,count='25' %}{% else %}{% add_get_parameter start=newest_timestamp,reverse=1,count='25' %}{% endif %}">25</a>,
+		<a href="{% url content.views.browse %}{% add_get_parameter count='25' %}">25</a>,
 		<a href="{% url content.views.browse %}{% add_get_parameter count='50' %}">50</a>,
 		<a href="{% url content.views.browse %}{% add_get_parameter count='100' %}">100</a>
 		items.

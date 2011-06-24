@@ -42,16 +42,13 @@ def browse(request):
     try: reverse = bool(int(request.GET.get('reverse', True)))
     except ValueError: reverse = True
 
-    (content_items, older_start, newer_start,
-     oldest_timestamp, newest_timestamp) = get_content_by_date(start=start, limit=count, reverse=reverse)
+    (content_items, older_start, newer_start) = get_content_by_date(start=start, limit=count, reverse=reverse)
     view_params = {
         'content_items': content_items,
         'older_start': older_start,
         'newer_start': newer_start,
         'get_params': request.GET,
-        'view': view,
-        'oldest_timestamp': oldest_timestamp,
-        'newest_timestamp': newest_timestamp
+        'view': view
     }
     return render_to_response('content/browse.html', view_params, context_instance = RequestContext(request))
 

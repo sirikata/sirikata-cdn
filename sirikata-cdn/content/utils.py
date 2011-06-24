@@ -86,7 +86,7 @@ def get_content_by_date(start="", limit=25, reverse=True):
 
     found_items = sorted(found_items, key=operator.itemgetter("timestamp"), reverse=True)
 
-    return found_items, older_start, newer_start, oldest_timestamp, newest_timestamp
+    return found_items, older_start, newer_start
 
 
 def get_file_metadata(filename):
