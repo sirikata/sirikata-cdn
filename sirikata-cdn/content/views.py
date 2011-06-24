@@ -293,6 +293,9 @@ class UploadImport(forms.Form):
         self.fields['description'] = forms.CharField(required=False, max_length=1000, widget=forms.Textarea(attrs={
             'class': '{maxlength:1000}'
         }))
+        self.fields['labels'] = forms.CharField(required=False, max_length=1000, widget=forms.TextInput(attrs={
+            'class': '{maxlength:1000}'
+        }))
     def clean_path(self):
         path = self.cleaned_data['path']
         if not re.match("^[A-Za-z0-9_\.\-/]*$", path):
@@ -361,6 +364,9 @@ class EditFile(forms.Form):
         self.fields['description'] = forms.CharField(required=False, max_length=1000, widget=forms.Textarea(attrs={
             'class': '{maxlength:1000}'
         }))
+        self.fields['labels'] = forms.CharField(required=False, max_length=1000, widget=forms.TextInput(attrs={
+            'class': '{maxlength:1000}', 'style': 'width: 400px'
+        }))
 def edit_file(request, filename):
     try: file_metadata = get_file_metadata("/%s" % filename)
     except NotFoundError: return HttpResponseNotFound()
@@ -378,16 +384,26 @@ def edit_file(request, filename):
         if form.is_valid():
             title = form.cleaned_data['title']
             description = form.cleaned_data['description']
+            labels = form.cleaned_data['labels'].split(',')
+            labels = [label.strip() for label in labels]
 
             try:
-                updated_info = {'title': title, 'description': description}
+                updated_info = {
+                    'title': title,
+                    'description': description,
+                    'labels': labels,
+                }
                 add_base_metadata(basepath, version, updated_info)
             except:
                 return HttpResponseServerError("There was an error editing your file.")
 
             return redirect('content.views.view', filename)
     else:
-        form = EditFile(initial={'title':file_metadata['title'], 'description':file_metadata['description']})
+        form = EditFile(initial={
+            'title': file_metadata['title'],
+            'description' : file_metadata['description'],
+            'labels': ', '.join(file_metadata['labels'])
+        })
 
     view_params = {'form': form,
                    'filename': filename}

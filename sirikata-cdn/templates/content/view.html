@@ -38,6 +38,18 @@
         <p class="bold">
         {{ metadata.description|linebreaksbr|default:"<em>No description</em>" }}
         </p>
+        <p class="bold">Labels: {{ metadata.labels|join:", "|default:"None" }}</p>
+        <!--div>
+            <p>Tags:</p>
+            <table style = 'width: 300px'>
+                {% for tagName, tagValue in metadata.tags %}
+                    <tr>
+                        <td>{{ tagName }}</td>
+                        <td>{{ tagValue }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div-->
         {% if can_change %}
         <br>
         <p>

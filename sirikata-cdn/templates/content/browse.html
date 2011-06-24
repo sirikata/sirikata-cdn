@@ -51,6 +51,7 @@
         <tr>
             <th>Author</th>
             <th>Model</th>
+            <th>Labels</th>
             <th>Time</th>
         </tr>
         {% for item in content_items %}
@@ -65,6 +66,9 @@
                     <a href="{% url content.views.view item.full_path|slice:"1:" %}">
                     <span class="title">{{ item.metadata.title|truncate_chars:15 }}</span>
                     </a>
+                </td>
+                <td>
+                    {{ item.metadata.labels|join:", "|default:"None" }}
                 </td>
                 <td>
                     <span class="timeago">{{ item.timestamp|timesince }} ago </span><br>
