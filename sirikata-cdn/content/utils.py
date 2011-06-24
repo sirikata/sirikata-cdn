@@ -18,8 +18,12 @@ def get_content_by_date(start="", limit=25, reverse=True):
 
     cur_index_row = index_rows[0].split(",")[-1]
 
+    if reverse:
+        extra_fetch = 1
+    else:
+        extra_fetch = 2
     content_paths = getColRange(NAMESBYTIME, cur_index_row, column_start=start,
-                                column_finish="", column_count=limit+1, column_reversed=reverse)
+                                column_finish="", column_count=limit+extra_fetch, column_reversed=reverse)
 
     older_start = None
     newer_start = None
@@ -32,12 +36,13 @@ def get_content_by_date(start="", limit=25, reverse=True):
             older_start = str(oldest_timestamp)
             del content_paths[oldest_timestamp]
         if start != "":
-            newer_start = str(newest_timestamp + 1)
+            newer_start = str(newest_timestamp)
     else:
-        older_start = str(oldest_timestamp - 1)
+        older_start = str(oldest_timestamp)
+        del content_paths[oldest_timestamp]
         if len(content_paths) > limit:
-            newer_start = str(newest_timestamp + 1)
             del content_paths[newest_timestamp]
+            newer_start = str(max(content_paths.keys()))
 
     content_items = []
     multiget_keys = []
