@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html> 
+<html>
 
 <head>
     <title>{% block title %}Sirikata CDN{% endblock title %}</title>
@@ -27,24 +27,29 @@
 <div id="header"><h1>Sirikata CDN Website</h1></div>
 
 <div id="navbar">
-<div id="navigation">
-<ul id="menu_list">
-<li><a href="/">Browse</a></li>
-<li><a href="/upload/">Upload</a></li>
-<li><a href="">Search</a></li>
-</ul>
-</div>
-<div id="useractions">
-<ul id="useractionlist">
-{% if request.user.is_authenticated %}
-<li><a href="/uploads/">My Uploads</a></li>
-<li><span>{{ request.user.username }}</span></li>
-<li><a href="/logout/">Logout</a></li>
-{% else %}
-<li><a href="/login/">Login</a></li>
-{% endif %}
-</ul>
-</div>
+    <div id="navigation">
+        <ul id="menu_list">
+            <li><a href="/">Browse</a></li>
+            <li><a href="/upload/">Upload</a></li>
+            <li>
+                <form method = 'GET' action = '/search'>
+                    <input type = 'text' name = 'q' />
+                    <input type = 'submit' value = 'Search' />
+                </form>
+            </li>
+        </ul>
+    </div>
+    <div id="useractions">
+        <ul id="useractionlist">
+            {% if request.user.is_authenticated %}
+                <li><a href="/uploads/">My Uploads</a></li>
+                <li><span>{{ request.user.username }}</span></li>
+                <li><a href="/logout/">Logout</a></li>
+            {% else %}
+                <li><a href="/login/">Login</a></li>
+            {% endif %}
+        </ul>
+    </div>
 </div>
 
 <div id="content_wrapper">

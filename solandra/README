@@ -1,0 +1,13 @@
+How to setup Solandra on the CDN:
+
+* Go to https://github.com/tjake/Solandra and clone the repository
+* Follow the "Embedding in an existing cassandra distribution" instructions
+  to install it wherever you installed Cassandra.
+* Run these commands from this directory to create the SirikataCDN core on
+  Solandra and push the schema and related data files to it.
+
+curl http://localhost:8983/solandra/schema/SirikataCDN/schema.xml --data-binary @schema.xml -H 'Content-type:text/xml; charset=utf-8'
+curl http://localhost:8983/solandra/schema/SirikataCDN/stopwords.txt --data-binary @stopwords.txt
+curl http://localhost:8983/solandra/schema/SirikataCDN/synonyms.txt --data-binary @synonyms.txt
+
+* Get pysolr at https://github.com/toastdriven/pysolr.

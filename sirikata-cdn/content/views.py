@@ -19,6 +19,7 @@ from users.middleware import save_upload_task, get_pending_upload, \
 from content.utils import get_file_metadata, get_hash, get_content_by_date
 from content.utils import add_base_metadata, delete_file_metadata
 from content.utils import get_versions
+from content.utils import user_search, get_content_by_name
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
@@ -482,6 +483,25 @@ def view_json(request, filename):
     view_params['basename'] = split[-2]
     view_params['basepath'] = "/".join(split[:-1])
     view_params['fullpath'] = filename
+    response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
+    response['Access-Control-Allow-Origin'] = '*'
+    return response
+
+def search(request):
+    query = request.GET.get('q', '')
+    results = user_search(query)
+    names = [result['id'] for result in results]
+    results = get_content_by_name(names)
+    view_params = {
+        'query': query,
+        'results': results
+    }
+    return render_to_response('content/search.html', view_params, context_instance = RequestContext(request))
+
+def search_json(request):
+    query = request.GET.get('q', '')
+    results = user_search(query)
+    view_params = {'results': results}
     response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
     response['Access-Control-Allow-Origin'] = '*'
     return response

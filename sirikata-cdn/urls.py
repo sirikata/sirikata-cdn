@@ -24,6 +24,8 @@ urlpatterns = patterns('',
     (r'^api/browse/(?P<start>[0-9]*)$', 'content.views.browse_json'),
     (r'^$', 'content.views.browse'),
     (r'^profile/(?P<username>\w+)$', 'users.views.profile'),
+    (r'^api/search$', 'content.views.search_json'),
+    (r'^search$', 'content.views.search'),
 )
 
 if settings.DEBUG:

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load truncate_filters_extra %}
+{% load add_get_parameter %}
+
+{% block title %}{{ block.super }} | Search{% endblock title %}
+
+
+{% block main_content %}
+<table id="mesh_list">
+    <tr>
+        <th>Author</th>
+        <th>Model</th>
+        <th>Labels</th>
+    </tr>
+    {% for item in results %}
+        <tr>
+            <td><a href = "{% url users.views.profile item.username %}">{{ item.username }}</a><br /></td>
+            <td>
+                {% if item.metadata.types.original.thumbnail %}
+                    <img src="{% url content.views.download item.metadata.types.original.thumbnail %}" class = 'tiny_thumbnail' />
+                {% else %}
+                    <img src="{{ MEDIA_URL }}images/question.png" class = 'tiny_thumbnail'/>
+                {% endif %}
+                <a href="{% url content.views.view item.full_path|slice:"1:" %}">
+                <span class="title">{{ item.metadata.title|truncate_chars:15 }}</span>
+                </a>
+            </td>
+            <td>
+                {{ item.metadata.labels|join:", "|default:"None" }}
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+{% endblock main_content %}

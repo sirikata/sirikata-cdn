@@ -40,10 +40,10 @@ div#navigation ul li, div#useractions ul li {
     display: inline;
     margin: 0;
     padding: 0;
+    float: left;
 }
 div#navigation li a, div#useractions li a, div#useractions li span {
     display: block;
-    float: left;
     padding: 5px 10px;
     color: #222222;
     text-decoration: none;

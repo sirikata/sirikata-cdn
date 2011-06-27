@@ -4,11 +4,41 @@ import time
 import datetime
 import operator
 import posixpath
+import pysolr
 from users.middleware import remove_file_upload
+
+SOLR_URL = 'http://localhost:8983/solandra/SirikataCDN'
 
 NAMES = getColumnFamily('Names')
 FILES = getColumnFamily('Files')
 NAMESBYTIME = getColumnFamily('NameTimestampIndex')
+
+def get_model_data_from_path(path):
+    version_num = path.split("/")[-1]
+    base_path = "/".join(path.split("/")[:-1])
+    base_name = posixpath.basename(base_path)
+    prefix_path = posixpath.dirname(base_path)
+    username = path.split("/")[1]
+    return {
+        'version_num': version_num,
+        'base_path': base_path,
+        'base_name': base_name,
+        'prefix_path': prefix_path,
+        'username': username,
+        'full_path': '%s/%s' % (base_path, version_num)
+    }
+
+def get_content_by_name(names):
+    name_recs = multiGetRecord(NAMES, names)
+    items = []
+    for name, rec in name_recs.iteritems():
+        model_data = get_model_data_from_path(name)
+        item = {}
+        item['username'] = model_data['username']
+        item['full_path'] = model_data['full_path']
+        item['metadata'] = json.loads(rec[rec['latest']])
+        items.append(item)
+    return items
 
 def get_content_by_date(start="", limit=25, reverse=True):
     try:
@@ -48,20 +78,17 @@ def get_content_by_date(start="", limit=25, reverse=True):
     content_items = []
     multiget_keys = []
     for timestamp, path in content_paths.iteritems():
-        version_num = path.split("/")[-1]
-        base_path = "/".join(path.split("/")[:-1])
-        base_name = posixpath.basename(base_path)
-        prefix_path = posixpath.dirname(base_path)
-        username = path.split("/")[1]
-        multiget_keys.append(base_path)
+        model_data = get_model_data_from_path(path)
+        multiget_keys.append(model_data['base_path'])
         content_items.append({'timestamp': datetime.datetime.fromtimestamp(timestamp / 1e6),
                                'full_timestamp': timestamp,
-                               'version_num': version_num,
-                               'base_path': base_path,
-                               'username': username,
-                               'base_name': base_name,
-                               'prefix_path': prefix_path,
-                               'full_path': "%s/%s" % (base_path, version_num)})
+                               'version_num': model_data['version_num'],
+                               'base_path': model_data['base_path'],
+                               'username': model_data['username'],
+                               'base_name': model_data['base_name'],
+                               'prefix_path': model_data['prefix_path'],
+                               'full_path': model_data['full_path']
+                               })
 
     #TODO: This sucks. There is no way to issue a set of (rowkey, [columns]) to multiget
     # Instead, this is getting EVERY column, even though we only need the individual version
@@ -83,6 +110,18 @@ def get_content_by_date(start="", limit=25, reverse=True):
     for content_item in deleted_items:
         try: removeColumns(NAMESBYTIME, cur_index_row, columns=[content_item['full_timestamp']])
         except DatabaseError: pass
+
+    # Add to solandra index.
+    for item in found_items:
+        solr = pysolr.Solr(SOLR_URL)
+        solr.add([{
+            'id': item['base_path'],
+            'title': item['metadata']['title'],
+            'description': item['metadata']['description'],
+            'author': item['username'],
+            'date': item['timestamp'],
+            'tags': item['metadata'].get('labels', []),
+        }])
 
     found_items = sorted(found_items, key=operator.itemgetter("timestamp"), reverse=True)
 
@@ -220,3 +259,14 @@ def delete_file_metadata(path, version_num):
     username = path.split("/")[1]
     remove_file_upload(username, "%s/%s" % (path, version_num))
     removeColumns(NAMES, path, columns=[version_num])
+
+def user_search(query):
+    if query == '':
+        return []
+    solr = pysolr.Solr(SOLR_URL)
+    args = {
+        'defType': 'dismax',
+        'qf': r'title^3.0 description author^1.5 tags^2.0 date'
+    }
+    results = solr.search(query, **args)
+    return [result for result in results]
