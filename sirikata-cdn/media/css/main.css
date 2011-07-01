@@ -164,7 +164,7 @@ div.pagelet td {
 	border-bottom: 1px solid #999999;
 	padding-bottom: 2px;
 	padding-top: 2px;
-	padding-left: 1px;
+	padding-left: 3px;
 	padding-right: 1px;
 }
 body a {
@@ -275,13 +275,6 @@ div#top_listing_bar div {
 }
 div#top_listing_bar div + div {
     margin-left: 10px;
-}
-
-table#mesh_list {
-    width: 80%;
-}
-table#mesh_list th {
-    text-align: left;
 }
 
 img.tiny_thumbnail {
