@@ -89,6 +89,19 @@ def get_file_or_zip(file_data, selected_dae):
         
     return (zip, dae_zip_name, dae_data)
 
+def find_in_zip(filepath, zip):
+    if filepath in zip.namelist():
+        return zip.read(filepath)
+    basename = posixpath.basename(filepath)
+    matching = []
+    for zipname in zip.namelist():
+        if posixpath.basename(zipname) == basename:
+            matching.append(zipname)
+    if len(matching) == 1:
+        return zip.read(matching[0])
+    else:
+        return None
+
 def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles):
     try:
         col = coll.Collada(StringIO(dae_data))
@@ -109,8 +122,8 @@ def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles):
             dae_prefix = posixpath.split(dae_zip_name)[0]
             concat_path = posixpath.join(dae_prefix, rel_path)
             norm_path = posixpath.normpath(concat_path)
-            if norm_path in zip.namelist():
-                img_data = zip.read(norm_path)
+            img_data = find_in_zip(norm_path, zip)
+            if img_data:
                 subfile_data[base_name] = img_data
             else:
                 not_found_list.append(base_name)

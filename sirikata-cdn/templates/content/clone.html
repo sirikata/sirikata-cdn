@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ block.super }} | Clone File{% endblock title %}
+
+{% block js_includes %}
+{{ block.super }}
+<script type="text/javascript"> 
+    $(document).ready(function() {
+        $("#clone_file").styleform();
+        $("#clone_file_form").validate({
+            errorClass: "ui-state-error"
+        });
+    });
+</script>
+{% endblock js_includes %} 
+
+{% block main_content %}
+<div id="clone_file">
+<fieldset id="clone_file_fieldset">
+    <legend id="clone_file_legend">Clone File</legend>
+    <form enctype="multipart/form-data" action="{% url content.views.clone_file clone_path %}" method="post" id="clone_file_form">{% csrf_token %}
+    <ul>
+    
+        <li><span class="form_message">Specify metadata about the file and choose a path where you want to store it in your account.</span></li>
+    
+        <li><label class="form_label multiline">Path being cloned</label><span class="path_name">/{{ clone_path }}</span></li>
+    
+        {% for field in form.visible_fields %}
+            <li>
+            <label class="form_label" for='id_{{ field.name }}'>{{ field.label }}</label>
+            {% if field.name == "path" %}
+            <span class="path_name">/{{ request.user.username }}/</span>
+            {% endif %}
+            {{ field }}
+            {% if field.errors %}
+            <label class='ui-state-error' for='id_{{ field.name }}' generated="true">{{ field.errors|join:". " }}</label>
+            {% endif %}
+            </li>
+        {% endfor %}
+
+        <li><label class="form_label" for="clone_file_submit"></label><input id="clone_file_submit" type="submit" value="Submit"/></li>
+    </ul>
+    {% for hidden in form.hidden_fields %}
+    {{ hidden }}
+    {% endfor %}
+    </form>
+</fieldset>
+</div>
+
+{% endblock main_content %}
