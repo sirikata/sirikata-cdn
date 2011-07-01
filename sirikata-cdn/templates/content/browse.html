@@ -47,13 +47,14 @@
     {% endfor %}
     </ul>
 {% else %}
-    <table id="mesh_list">
-        <tr>
+    <div class="pagelet">
+    <table>
+        <thead>
             <th>Author</th>
             <th>Model</th>
             <th>Labels</th>
             <th>Time</th>
-        </tr>
+        </thead>
         {% for item in content_items %}
             <tr>
                 <td><a href = "{% url users.views.profile item.username %}">{{ item.username }}</a><br /></td>
@@ -76,6 +77,7 @@
             </tr>
         {% endfor %}
     </table>
+    </div>
 {% endif %}
 
 {% if older_start or newer_start %}
