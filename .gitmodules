@@ -4,3 +4,6 @@
 [submodule "externals/openid"]
 	path = externals/openid
 	url = git://github.com/openid/python-openid.git
+[submodule "externals/solandra"]
+	path = externals/solandra
+	url = git://github.com/tjake/Solandra.git
