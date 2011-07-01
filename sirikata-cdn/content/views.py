@@ -38,7 +38,7 @@ def json_handler(obj):
 def browse(request):
     start = request.GET.get('start', '')
     view = request.GET.get('view', 'icon')
-    try: count = int(request.GET.get('count', 2))
+    try: count = int(request.GET.get('count', 25))
     except ValueError: count = 25
     try: reverse = bool(int(request.GET.get('reverse', True)))
     except ValueError: reverse = True
@@ -403,7 +403,7 @@ def edit_file(request, filename):
         form = EditFile(initial={
             'title': file_metadata['title'],
             'description' : file_metadata['description'],
-            'labels': ', '.join(file_metadata['labels'])
+            'labels': ', '.join(file_metadata.get('labels', []))
         })
 
     view_params = {'form': form,
