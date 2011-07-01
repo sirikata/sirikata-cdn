@@ -9,5 +9,6 @@ How to setup Solandra on the CDN:
 curl http://localhost:8983/solandra/schema/SirikataCDN/schema.xml --data-binary @schema.xml -H 'Content-type:text/xml; charset=utf-8'
 curl http://localhost:8983/solandra/schema/SirikataCDN/stopwords.txt --data-binary @stopwords.txt
 curl http://localhost:8983/solandra/schema/SirikataCDN/synonyms.txt --data-binary @synonyms.txt
+curl http://localhost:8983/solandra/schema/SirikataCDN/stopwords_en.txt --data-binary @stopwords.txt
 
 * Get pysolr at https://github.com/toastdriven/pysolr.
