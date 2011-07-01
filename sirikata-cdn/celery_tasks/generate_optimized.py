@@ -5,7 +5,7 @@ from StringIO import StringIO
 from content.utils import get_file_metadata, get_hash, save_file_data
 from content.utils import add_metadata, get_new_version_from_path, save_file_name
 import posixpath
-#import meshtool.filters
+import meshtool.filters
 import hashlib
 import zipfile
 from content.utils import save_file_data, save_version_type
