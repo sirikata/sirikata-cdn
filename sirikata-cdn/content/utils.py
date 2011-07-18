@@ -5,7 +5,7 @@ import datetime
 import operator
 import posixpath
 import pysolr
-from users.middleware import remove_file_upload
+from users.middleware import remove_file_upload, save_file_upload
 
 SOLR_URL = 'http://localhost:8983/solandra/SirikataCDN'
 

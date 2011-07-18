@@ -18,7 +18,7 @@ from users.middleware import save_upload_task, get_pending_upload, \
 
 from content.utils import get_file_metadata, get_hash, get_content_by_date
 from content.utils import add_base_metadata, delete_file_metadata
-from content.utils import get_versions
+from content.utils import get_versions, copy_file
 from content.utils import user_search, get_content_by_name
 
 from celery_tasks.import_upload import import_upload, place_upload
@@ -55,8 +55,8 @@ def browse(request):
 
 
 def browse_json(request, start=""):
-    content_items, next_start = get_content_by_date(start=start)
-    view_params = {'content_items': content_items, 'next_start': next_start}
+    (content_items, older_start, newer_start) = get_content_by_date(start=start)
+    view_params = {'content_items': content_items, 'next_start': older_start, 'previous_start': newer_start}
     response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
     response['Access-Control-Allow-Origin'] = '*'
     return response

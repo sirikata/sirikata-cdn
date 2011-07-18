@@ -83,15 +83,18 @@
     </div>
 {% endif %}
 
-{% if older_start or newer_start %}
 <div id="listing_nav">
-    {% if older_start %}
-    <a href="{% url content.views.browse %}{% add_get_parameter start=older_start,reverse='1' %}">Older</a>
-    {% endif %}
+    <div id="prev_box">
     {% if newer_start %}
-    <a href="{% url content.views.browse %}{% add_get_parameter start=newer_start,reverse='0' %}">Newer</a>
+    <a href="{% url content.views.browse %}{% add_get_parameter start=newer_start,reverse='0' %}">&laquo; Previous</a>
     {% endif %}
+    </div>
+    <div id="next_box">
+    {% if older_start %}
+    <a href="{% url content.views.browse %}{% add_get_parameter start=older_start,reverse='1' %}">Next &raquo;</a>
+    {% endif %}
+    </div>
+    &nbsp;
 </div>
-{% endif %}
 
 {% endblock main_content %}
