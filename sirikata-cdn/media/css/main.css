@@ -235,6 +235,7 @@ div#type_tabs img:hover.thumbnail {
 }
 
 ul.content_list {
+	clear: left;
 	margin: 0;
 	padding: 0;
 }
@@ -274,13 +275,23 @@ ul.content_list span.timeago {
 }
 
 div#top_listing_bar {
-    text-align: right;
+	font-size: 0.9em;
+	font-weight: bold;
 }
 div#top_listing_bar div {
-	display: inline;
+	margin-bottom: 10px;
 }
-div#top_listing_bar div + div {
-    margin-left: 10px;
+div#top_listing_bar div#result_info {
+	float: left;
+}
+div#top_listing_bar div#result_options {
+	float: right;
+}
+div#top_listing_bar div div {
+    display: inline;
+}
+div#top_listing_bar div div + div {
+    margin-left: 20px;
 }
 
 img.tiny_thumbnail {

@@ -7,19 +7,22 @@
 {% block main_content %}
 
 <div id="top_listing_bar">
-	<div>
-		{% if view == 'icon' %}
-		    Icon | <a href = "{% url content.views.browse %}{% add_get_parameter view='list' %}">List</a>
-		{% else %}
-		    <a href = "{% url content.views.browse %}{% add_get_parameter view='icon' %}">Icon</a> | List
-		{% endif %}
-	</div>
-	<div>
-		Show
-		<a href="{% url content.views.browse %}{% add_get_parameter count='25' %}">25</a>,
-		<a href="{% url content.views.browse %}{% add_get_parameter count='50' %}">50</a>,
-		<a href="{% url content.views.browse %}{% add_get_parameter count='100' %}">100</a>
-		items.
+    <div id="result_info">{{ content_items|length }} Result{{ content_items|pluralize }}</div>
+    <div id="result_options">
+		<div id="icon_or_list">
+			{% if view == 'icon' %}
+			    Icon | <a href = "{% url content.views.browse %}{% add_get_parameter view='list' %}">List</a>
+			{% else %}
+			    <a href = "{% url content.views.browse %}{% add_get_parameter view='icon' %}">Icon</a> | List
+			{% endif %}
+		</div>
+		<div id="item_count">
+			Show
+			<a href="{% url content.views.browse %}{% add_get_parameter count='25' %}">25</a>,
+			<a href="{% url content.views.browse %}{% add_get_parameter count='50' %}">50</a>,
+			<a href="{% url content.views.browse %}{% add_get_parameter count='100' %}">100</a>
+			items.
+		</div>
 	</div>
 </div>
 
