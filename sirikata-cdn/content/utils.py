@@ -112,16 +112,16 @@ def get_content_by_date(start="", limit=25, reverse=True):
         except DatabaseError: pass
 
     # Add to solandra index.
-    for item in found_items:
-        solr = pysolr.Solr(SOLR_URL)
-        solr.add([{
-            'id': item['base_path'],
-            'title': item['metadata']['title'],
-            'description': item['metadata']['description'],
-            'author': item['username'],
-            'date': item['timestamp'],
-            'tags': item['metadata'].get('labels', []),
-        }])
+    #for item in found_items:
+    #    solr = pysolr.Solr(SOLR_URL)
+    #    solr.add([{
+    #        'id': item['base_path'],
+    #        'title': item['metadata']['title'],
+    #        'description': item['metadata']['description'],
+    #        'author': item['username'],
+    #        'date': item['timestamp'],
+    #        'tags': item['metadata'].get('labels', []),
+    #    }])
 
     found_items = sorted(found_items, key=operator.itemgetter("timestamp"), reverse=True)
 

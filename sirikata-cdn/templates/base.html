@@ -27,10 +27,10 @@
 <div id="header">
 <h1>Sirikata CDN Website</h1>
 <div id="search_box">
-<form id="search_form" method="GET" action="/search">
+<!-- <form id="search_form" method="GET" action="/search">
 <input id="search_text" type="text" name="q" class="ui-widget-content ui-corner-all" />
 <input id="search_submit" type="submit" value="Search" />
-</form>
+</form> -->
 </div>
 </div>
 
@@ -45,7 +45,7 @@
         <ul id="useractionlist">
             {% if request.user.is_authenticated %}
                 <li><a href="/uploads/">My Uploads</a></li>
-                <li><span>{{ request.user.username }}</span></li>
+                <li><a href="{% url users.views.profile request.user.username %}">{{ request.user.username }}</a></li>
                 <li><a href="/logout/">Logout</a></li>
             {% else %}
                 <li><a href="/login/">Login</a></li>
