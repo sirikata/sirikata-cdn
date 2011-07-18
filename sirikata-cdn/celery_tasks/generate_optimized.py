@@ -33,8 +33,8 @@ def generate_optimized(filename, typeid):
 
     mesh = collada.Collada(StringIO(dae_data), aux_file_loader=customImageLoader)
 
-    full_opts = meshtool.filters.factory.getInstance('full_optimizations')
-    mesh = full_opts.apply(mesh)
+    med_opts = meshtool.filters.factory.getInstance('medium_optimizations')
+    mesh = med_opts.apply(mesh)
 
     #Make sure image paths are just the base name
     current_prefix = "optimized"
