@@ -597,7 +597,8 @@ def download(request, hash, filename=None):
     return response
 
 def dns(request, filename):
-    if request.method != 'HEAD':
+    send_body = False
+    if request.method != 'HEAD' and request.method != 'GET':
         return HttpResponseBadRequest()
 
     parts = filename.split("/")
@@ -641,10 +642,19 @@ def dns(request, filename):
         subfile_metadata = get_file_metadata(subfile_map[requested_file])
         hash = subfile_metadata['hash']
         file_size = subfile_metadata['size']
+    
+    if request.method == 'GET':
+        body = {'Hash': hash, 'File-Size': file_size}
+        bodydata = simplejson.dumps(body)
+        response = HttpResponse(bodydata, mimetype='application/json')
+    else:
+        response = HttpResponse()
 
-    response = HttpResponse()
+    response['Access-Control-Allow-Origin'] = '*'
+    response["Content-Length"] = len(data)
     response['Access-Control-Allow-Origin'] = '*'
     response['Access-Control-Expose-Headers'] = 'Hash, File-Size'
     response['Hash'] = hash
     response['File-Size'] = file_size
+
     return response
