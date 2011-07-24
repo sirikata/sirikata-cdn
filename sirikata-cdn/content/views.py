@@ -643,7 +643,8 @@ def dns(request, filename):
         file_size = subfile_metadata['size']
 
     response = HttpResponse()
+    response['Access-Control-Allow-Origin'] = '*'
+    response['Access-Control-Expose-Headers'] = 'Hash, File-Size'
     response['Hash'] = hash
     response['File-Size'] = file_size
-    response['Access-Control-Allow-Origin'] = '*'
     return response
