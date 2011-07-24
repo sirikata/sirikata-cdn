@@ -597,8 +597,9 @@ def download(request, hash, filename=None):
     return response
 
 def dns(request, filename):
+    send_body = False
     if request.method != 'HEAD':
-        return HttpResponseBadRequest()
+        send_body = True
 
     parts = filename.split("/")
     if len(parts) < 3:
@@ -642,8 +643,14 @@ def dns(request, filename):
         hash = subfile_metadata['hash']
         file_size = subfile_metadata['size']
 
-    response = HttpResponse()
-    response['Hash'] = hash
-    response['File-Size'] = file_size
+    body = {'Hash': hash, 'File-Size': file_size}
+    data = simplejson.dumps(body)
+    if send_body:
+        response = HttpResponse(data, mimetype='application/json')
+    else:
+        response = HttpResponse(mimetype='application/json')
     response['Access-Control-Allow-Origin'] = '*'
+    response["Content-Length"] = len(data)
+    for key in body:
+        response[key] = body.key
     return response
