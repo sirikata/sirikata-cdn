@@ -651,7 +651,6 @@ def dns(request, filename):
         response = HttpResponse()
 
     response['Access-Control-Allow-Origin'] = '*'
-    response["Content-Length"] = len(data)
     response['Access-Control-Allow-Origin'] = '*'
     response['Access-Control-Expose-Headers'] = 'Hash, File-Size'
     response['Hash'] = hash
