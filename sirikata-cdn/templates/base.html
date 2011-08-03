@@ -43,6 +43,7 @@
     </div>
     <div id="useractions">
         <ul id="useractionlist">
+            <li><a href="{% url misc.views.about %}">About</a>
             {% if request.user.is_authenticated %}
                 <li><a href="/uploads/">My Uploads</a></li>
                 <li><a href="{% url users.views.profile request.user.username %}">{{ request.user.username }}</a></li>

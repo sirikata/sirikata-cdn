@@ -26,6 +26,7 @@ urlpatterns = patterns('',
     (r'^$', 'content.views.browse'),
     (r'^profile/(?P<username>\w+)$', 'users.views.profile'),
     (r'^api/search$', 'content.views.search_json'),
+    (r'^about/$', 'misc.views.about'),
     (r'^search$', 'content.views.search'),
 )
 
