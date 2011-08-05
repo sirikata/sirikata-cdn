@@ -3,6 +3,8 @@ register = template.Library()
 
 @register.filter
 def truncate_chars(value, max_length):
+    if value is None:
+        return ""
     if len(value) <= max_length:
         return value
 
