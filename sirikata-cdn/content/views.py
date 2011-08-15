@@ -493,8 +493,7 @@ def view(request, filename):
 
     versions = get_versions('/' + basepath)
     if versions is None:
-        # basepath is just username.
-        return redirect('users.views.profile', basepath)
+        return HttpResponseNotFound()
 
     latest_version = str(max(map(int, versions)))
     if version is None:
