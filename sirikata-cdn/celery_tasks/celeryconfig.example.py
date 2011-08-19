@@ -11,4 +11,9 @@ CASSANDRA_COLUMN_FAMILY = "CeleryResults"
 CASSANDRA_READ_CONSISTENCY = "ONE"
 CASSANDRA_WRITE_CONSISTENCY = "ANY"
 
-CELERY_IMPORTS = ("celery_tasks.import_upload", "celery_tasks.generate_screenshot", "celery_tasks.generate_optimized")
+CELERY_IMPORTS = (
+    "celery_tasks.import_upload",
+    "celery_tasks.generate_screenshot",
+    "celery_tasks.generate_optimized",
+    "celery_tasks.generate_metadata"
+)

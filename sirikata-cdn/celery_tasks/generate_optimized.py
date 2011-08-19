@@ -74,3 +74,4 @@ def generate_optimized(filename, typeid):
                       subfile_names, zip_hex_key, "optimized")
 
     send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[filename, "optimized"])
+    send_task("celery_tasks.generate_metadata.generate_metadata", args=[filename, "optimized"])

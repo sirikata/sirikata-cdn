@@ -102,6 +102,14 @@ You can pin sirikata to this latest version: <br/>
 	            {% endif %}
 	            <tr><td class="label">Download Mesh</td><td><a href="{% url content.views.download props.hash basename %}">{{ basename }}</a></td></tr>
 	            <tr><td class="label">Mesh Hash</td><td>{{ props.hash }}</td></tr>
+                
+                <tr><td class="label"># Triangles</td><td>{{ props.metadata.num_triangles }}</td></tr>
+                <tr><td class="label"># Materials</td><td>{{ props.metadata.num_materials }}</td></tr>
+                <tr><td class="label"># Images</td><td>{{ props.metadata.num_images }}</td></tr>
+                <tr><td class="label"># Vertices</td><td>{{ props.metadata.num_vertices }}</td></tr>
+                <tr><td class="label">Texture RAM Usage</td><td>{{ props.metadata.texture_ram_usage|filesizeformat }} </td></tr>
+                <tr><td class="label"># Draw Calls</td><td>{{ props.metadata.num_draw_calls }}</td></tr>
+                
 	            <tr><td class="label">Mesh Size</td><td>{{ props.size|filesizeformat }}</td></tr>
 	            <tr><td class="label">Sirikata URL</td><td><input class="clip_url" type="text" value="meerkat:///{{ basepath }}/{{ type_name }}/{{ version }}/{{ basename }}"></input></td></tr>
 	            {% for subfile in props.subfiles %}

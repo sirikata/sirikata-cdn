@@ -263,13 +263,15 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     
     try:
         save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),
-                          subfile_names, zip_hex_key, "original", title, description)
+                          subfile_names, zip_hex_key, "original", title,
+                          description)
     except cass.DatabaseError:
         raise DatabaseError()
 
     path_with_vers = "%s/%s" % (path, new_version_num)
 
     send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[path_with_vers, "original"])
+    send_task("celery_tasks.generate_metadata.generate_metadata", args=[path_with_vers, "original"])
     send_task("celery_tasks.generate_optimized.generate_optimized", args=[path_with_vers, "original"])
     
     return path_with_vers
