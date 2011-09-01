@@ -1,9 +1,0 @@
-pycassa
-   - Provided in externals/pycassa
-   - cd externals/pycassa; python setup.py install
-
-Thrift
-   - easy_install thrift05
-
-python-openid
-   - cd externals/openid; python setup.py install
