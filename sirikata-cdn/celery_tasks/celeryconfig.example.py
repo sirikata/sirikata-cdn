@@ -15,5 +15,6 @@ CELERY_IMPORTS = (
     "celery_tasks.import_upload",
     "celery_tasks.generate_screenshot",
     "celery_tasks.generate_optimized",
-    "celery_tasks.generate_metadata"
+    "celery_tasks.generate_metadata",
+    "celery_tasks.generate_progressive"
 )
