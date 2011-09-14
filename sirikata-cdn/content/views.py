@@ -325,6 +325,8 @@ def upload_import(request, task_id):
             title = form.cleaned_data['title']
             path = "/%s/%s" % (request.session['username'], form.cleaned_data['path'])
             description = form.cleaned_data['description']
+            labels = form.cleaned_data['labels'].split(',')
+            labels = [label.strip() for label in labels]
 
             task = place_upload.delay(upload_rec['main_rowkey'], upload_rec['subfiles'],
                                       title, path, description, selected_dae=upload_rec['dae_choice'])
