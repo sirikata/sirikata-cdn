@@ -57,7 +57,7 @@ def browse(request):
 def browse_json(request, start=""):
     (content_items, older_start, newer_start) = get_content_by_date(start=start)
     view_params = {'content_items': content_items, 'next_start': older_start, 'previous_start': newer_start}
-    response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
+    response = HttpResponse(simplejson.dumps(view_params, default=json_handler, indent=4*' '), mimetype='application/json')
     response['Access-Control-Allow-Origin'] = '*'
     return response
 
@@ -539,7 +539,7 @@ def view_json(request, filename):
     view_params['basename'] = split[-2]
     view_params['basepath'] = "/".join(split[:-1])
     view_params['fullpath'] = filename
-    response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
+    response = HttpResponse(simplejson.dumps(view_params, default=json_handler, indent=4*' '), mimetype='application/json')
     response['Access-Control-Allow-Origin'] = '*'
     return response
 
