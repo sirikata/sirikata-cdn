@@ -11,6 +11,7 @@ import zipfile
 from content.utils import save_file_data, save_version_type
 from celery.execute import send_task
 from meshtool.filters.simplify_filters.sander_simplify import SanderSimplify
+from meshtool.filters.optimize_filters.save_mipmaps import getMipMaps
 
 @task
 def generate_progressive(filename, typeid):
@@ -52,6 +53,13 @@ def generate_progressive(filename, typeid):
         progressive_hex_key = None
         progressive_stream_num_triangles = 0
 
+    mipmap_metadata = {}
+    mipmaps = getMipMaps(mesh)
+    for imgpath, (tarbuf, ranges) in mipmaps.iteritems():
+        mipmap_tar_hex_key = hashlib.sha256(tarbuf).hexdigest()
+        save_file_data(mipmap_tar_hex_key, tarbuf, "application/x-tar")
+        mipmap_metadata[imgpath] = {'hash':mipmap_tar_hex_key, 'byte_ranges':ranges}
+
     #Make sure image paths are just the base name
     current_prefix = "progressive"
     subfile_names = []
@@ -90,7 +98,8 @@ def generate_progressive(filename, typeid):
                       subfile_names, zip_hex_key, "progressive")
 
     add_metadata(path, version, "progressive", { 'progressive_stream': progressive_hex_key,
-                                                 'progressive_stream_num_triangles': progressive_stream_num_triangles  })
+                                                 'progressive_stream_num_triangles': progressive_stream_num_triangles,
+                                                 'mipmaps': mipmap_metadata  })
 
     send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[filename, "progressive"])
     send_task("celery_tasks.generate_metadata.generate_metadata", args=[filename, "progressive"])

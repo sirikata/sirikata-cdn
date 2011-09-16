@@ -650,8 +650,26 @@ def dns(request, filename):
         response = HttpResponse(bodydata, mimetype='application/json')
     else:
         response = HttpResponse()
+        
+    if 'progressive_stream' in file_metadata['types'][type_id] and file_metadata['types'][type_id]['progressive_stream'] is not None:
+        response['Progresive-Stream'] = file_metadata['types'][type_id]['progressive_stream']
+    if 'progressive_stream_num_triangles' in file_metadata['types'][type_id]:
+        response['Progresive-Stream-Num-Triangles'] = file_metadata['types'][type_id]['progressive_stream_num_triangles']
 
-    response['Access-Control-Allow-Origin'] = '*'
+    if 'metadata' in file_metadata['types'][type_id]:
+        extra_metadata = file_metadata['types'][type_id]['metadata']
+        if 'num_triangles' in extra_metadata:
+            response['Num-Triangles'] = extra_metadata['num_triangles']
+
+    if 'mipmaps' in file_metadata['types'][type_id]:
+        mipmaps = file_metadata['types'][type_id]['mipmaps']
+        response['Mipmaps'] = len(mipmaps)
+        for mipmap_number, (mipmap_name, mipmap_data) in enumerate(mipmaps.iteritems()):
+            response['Mipmap-%d-Name' % mipmap_number] = mipmap_name
+            response['Mipmap-%d-Hash' % mipmap_number] = mipmap_data['hash']
+            for mipmap_level_number, mipmap_level in enumerate(mipmap_data['byte_ranges']):
+                response['Mipmap-%d-Level-%d' % (mipmap_number,mipmap_level_number)] = '%s,%s,%s,%s' % (mipmap_level['offset'], mipmap_level['length'], mipmap_level['width'], mipmap_level['height'])
+
     response['Access-Control-Allow-Origin'] = '*'
     response['Access-Control-Expose-Headers'] = 'Hash, File-Size'
     response['Hash'] = hash
