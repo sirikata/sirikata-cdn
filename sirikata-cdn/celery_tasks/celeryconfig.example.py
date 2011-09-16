@@ -18,3 +18,11 @@ CELERY_IMPORTS = (
     "celery_tasks.generate_metadata",
     "celery_tasks.generate_progressive"
 )
+
+CELERY_ROUTES = {
+    "celery_tasks.import_upload": {"queue": "realtime"},
+    "celery_tasks.generate_screenshot": {"queue": "background_fast"},
+    "celery_tasks.generate_optimized": {"queue": "background_fast"},
+    "celery_tasks.generate_metadata": {"queue": "background_fast"},
+    "celery_tasks.generate_progressive": {"queue": "background_slow"}
+}
