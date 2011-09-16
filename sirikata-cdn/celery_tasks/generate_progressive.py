@@ -10,6 +10,7 @@ import hashlib
 import zipfile
 from content.utils import save_file_data, save_version_type
 from celery.execute import send_task
+from meshtool.filters.simplify_filters.sander_simplify import SanderSimplify
 
 @task
 def generate_progressive(filename, typeid):
@@ -38,13 +39,18 @@ def generate_progressive(filename, typeid):
     med_opts = meshtool.filters.factory.getInstance('medium_optimizations')
     mesh = med_opts.apply(mesh)
 
-    sander_simplify = meshtool.filters.factory.getInstance('sander_simplify')
     progressive_stream = StringIO()
-    mesh = sander_simplify.apply(mesh, progressive_stream)
+    sander_simplify = SanderSimplify(mesh, progressive_stream)
+    mesh = sander_simplify.simplify()
     
-    progressive_stream = progressive_stream.getvalue()
-    progressive_hex_key = hashlib.sha256(progressive_stream).hexdigest()
-    save_file_data(progressive_hex_key, progressive_stream, "model/vnd.pdae")
+    if sander_simplify.base_tri_count != sander_simplify.orig_tri_count:
+        progressive_stream = progressive_stream.getvalue()
+        progressive_hex_key = hashlib.sha256(progressive_stream).hexdigest()
+        save_file_data(progressive_hex_key, progressive_stream, "model/vnd.pdae")
+        progressive_stream_num_triangles = sander_simplify.orig_tri_count - sander_simplify.base_tri_count
+    else:
+        progressive_hex_key = None
+        progressive_stream_num_triangles = 0
 
     #Make sure image paths are just the base name
     current_prefix = "progressive"
@@ -83,7 +89,8 @@ def generate_progressive(filename, typeid):
     save_version_type(path, version, orig_hex_key, len(orig_save_data),
                       subfile_names, zip_hex_key, "progressive")
 
-    add_metadata(path, version, "progressive", { 'progressive_stream': progressive_hex_key })
+    add_metadata(path, version, "progressive", { 'progressive_stream': progressive_hex_key,
+                                                 'progressive_stream_num_triangles': progressive_stream_num_triangles  })
 
     send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[filename, "progressive"])
     send_task("celery_tasks.generate_metadata.generate_metadata", args=[filename, "progressive"])

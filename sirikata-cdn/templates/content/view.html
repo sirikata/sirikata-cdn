@@ -112,6 +112,12 @@ You can pin sirikata to this latest version: <br/>
                 
 	            <tr><td class="label">Mesh Size</td><td>{{ props.size|filesizeformat }}</td></tr>
 	            <tr><td class="label">Sirikata URL</td><td><input class="clip_url" type="text" value="meerkat:///{{ basepath }}/{{ type_name }}/{{ version }}/{{ basename }}"></input></td></tr>
+	            {% if props.progressive_stream %}
+	            <tr><td class="label">Progressive Stream</td><td><a href="{% url content.views.download props.progressive_stream basename|add:'.pdae' %}">{{ basename }}.pdae</a></td></tr>
+	            {% endif %}
+                {% if props.progressive_stream_num_triangles or props.progressive_stream_num_triangles == 0 %}
+                <tr><td class="label">Triangles in Progressive Stream</td><td>{{ props.progressive_stream_num_triangles }}</td></tr>
+                {% endif %}
 	            {% for subfile in props.subfiles %}
 	            <tr><td class="label">Subfile {{ forloop.counter }}</td>
 	            <td><a href="{% url content.views.view subfile|slice:"1:" %}">{{ subfile }}</a></td></tr>
