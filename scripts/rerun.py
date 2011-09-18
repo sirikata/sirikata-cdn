@@ -20,7 +20,7 @@ def emit_finished_tasks():
         if t.state == 'SUCCESS' or t.state == 'FAILURE':
             print 'Completed', task_string,
             print t.state
-            if t.state == 'FAILED':
+            if t.state == 'FAILURE':
                 print 'Printing exception:'
                 print
                 print str(t.result)
