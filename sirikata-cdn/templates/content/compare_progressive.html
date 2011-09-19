@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load truncate_filters_extra %}
+
+{% block title %}{{ block.super }} | Progressive Compare{% endblock title %}
+
+{% block main_content %}
+
+<div class="pagelet">
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Exists</th>
+            <th>Triangles</th>
+            <th>Draw Calls</th>
+            <th>Screenshot</th>
+        </tr>
+    </thead>
+    {% for item in content_items %}
+        <tr>
+            <td>
+                <a href="{% url content.views.view item.full_path|slice:"1:" %}">
+                <span class="title">{{ item.metadata.title|truncate_chars:15 }}</span>
+                </a>
+            </td>
+            <td>
+                {% if item.metadata.types.original %}
+                    Y
+                {% else %}
+                    MISSING
+                {% endif %}
+                /
+                {% if item.metadata.types.progressive %}
+                    Y
+                {% else %}
+                    MISSING
+                {% endif %}
+            </td>
+            <td>
+                {% if item.metadata.types.original.metadata.num_triangles %}
+                    {{ item.metadata.types.original.metadata.num_triangles }}
+                {% else %}
+                    MISSING
+                {% endif %}
+                /
+                {% if item.metadata.types.progressive.metadata.num_triangles %}
+                    {{ item.metadata.types.progressive.metadata.num_triangles }}
+                {% else %}
+                    MISSING
+                {% endif %}
+            </td>
+            <td>
+                {% if item.metadata.types.original.metadata.num_draw_calls %}
+                    {{ item.metadata.types.original.metadata.num_draw_calls }}
+                {% else %}
+                    MISSING
+                {% endif %}
+                /
+                {% if item.metadata.types.progressive.metadata.num_draw_calls %}
+                    {{ item.metadata.types.progressive.metadata.num_draw_calls }}
+                {% else %}
+                    MISSING
+                {% endif %}
+            </td>
+            <td>
+                {% if item.metadata.types.original.thumbnail %}
+                    <img src="{% url content.views.download item.metadata.types.original.thumbnail %}" class = 'tiny_thumbnail' />
+                {% else %}
+                    MISSING
+                {% endif %}
+                /
+                {% if item.metadata.types.progressive.thumbnail %}
+                    <img src="{% url content.views.download item.metadata.types.progressive.thumbnail %}" class = 'tiny_thumbnail' />
+                {% else %}
+                    MISSING
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+</div>
+    
+{% endblock main_content %}

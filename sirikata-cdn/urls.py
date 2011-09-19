@@ -28,6 +28,7 @@ urlpatterns = patterns('',
     (r'^api/search$', 'content.views.search_json'),
     (r'^about/$', 'misc.views.about'),
     (r'^search$', 'content.views.search'),
+    (r'^compare/progressive$', 'content.views.compare_progressive'),
 )
 
 if settings.DEBUG:

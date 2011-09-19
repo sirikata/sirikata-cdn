@@ -676,3 +676,10 @@ def dns(request, filename):
     response['File-Size'] = file_size
 
     return response
+
+def compare_progressive(request):
+    (content_items, older_start, newer_start) = get_content_by_date(start="", limit=5000)
+    view_params = {
+        'content_items': content_items,
+    }
+    return render_to_response('content/compare_progressive.html', view_params, context_instance = RequestContext(request))
