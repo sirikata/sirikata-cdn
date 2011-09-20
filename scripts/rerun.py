@@ -4,13 +4,50 @@ import time
 from celery.execute import send_task
 import argparse
 
-task_names = {'screenshot' : 'celery_tasks.generate_screenshot.generate_screenshot',
-              'generate_optimized' : 'celery_tasks.generate_optimized.generate_optimized',
-              'generate_metadata' : 'celery_tasks.generate_metadata.generate_metadata',
-              'generate_progressive' : 'celery_tasks.generate_progressive.generate_progressive'}
+def detect_screenshot(type, metadata):
+    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+        return False
+    if 'screenshot' in metadata['types'][type]:
+        return True
+    return False
+
+def detect_optimized(type, metadata):
+    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+        return False
+    if 'optimized' in metadata['types']:
+        return True
+    return False
+
+def detect_metadata(type, metadata):
+    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+        return False
+    if 'metadata' in metadata['types'][type]:
+        return True
+    return False
+
+def detect_progressive(type, metadata):
+    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+        return False
+    if 'progressive' in metadata['types']:
+        return True
+    return False
+
+tasks = {'screenshot' :
+            {'task_name': 'celery_tasks.generate_screenshot.generate_screenshot',
+             'detect_func': detect_screenshot},
+         'generate_optimized' :
+            {'task_name': 'celery_tasks.generate_optimized.generate_optimized',
+             'detect_func': detect_optimized},
+         'generate_metadata' :
+            {'task_name': 'celery_tasks.generate_metadata.generate_metadata',
+             'detect_func': detect_metadata},
+         'generate_progressive' :
+            {'task_name': 'celery_tasks.generate_progressive.generate_progressive',
+             'detect_func': detect_progressive}}
 
 running_tasks = []
 NUM_CONCURRENT_TASKS = None
+FORCE_TASK = False
 
 def emit_finished_tasks():
     global running_tasks
@@ -40,27 +77,29 @@ def wait_all():
         emit_finished_tasks()
         time.sleep(1)
 
-def do_task(taskname, path, type, timestamp=None):
+def do_task(taskname, path, type, timestamp=None, metadata=None):
+    if not FORCE_TASK and metadata is not None:
+        detect_func = tasks[taskname]['detect_func']
+        if detect_func(type, metadata):
+            return
+    
     task_string = '%s task for %s type=%s timestamp=%s' % (taskname, path, type, str(timestamp))
     print 'Issuing', task_string
-    t = send_task(task_names[taskname], args=[path, type])
+    t = send_task(tasks[taskname]['task_name'], args=[path, type])
     running_tasks.append((t, task_string))
     wait_if_needed()
 
 def do_single(task, path, type=None):
     metadata = get_file_metadata(path)
-    types_to_do = []
     if type is None:
         for t in metadata['types']:
-            types_to_do.append(t)
+            do_task(task, path, t, metadata=metadata)
     else:
         if type not in metadata['types']:
             print >> sys.stderr, 'Invalid type', type, 'for path', path
             return
-        types_to_do.append(type)
-    
-    for t in types_to_do:
-        do_task(task, path, t)
+        do_task(task, path, type, metadata=metadata)
+        
 
 def do_all(task, timestamp=None, type=None):
     next_start = ""
@@ -74,14 +113,16 @@ def do_all(task, timestamp=None, type=None):
             timestamp = item['full_timestamp']
             for existing_type in item['metadata']['types'].iterkeys():
                 if type is None or type == existing_type:
-                    do_task(task, path, existing_type, timestamp)
+                    do_task(task, path, existing_type, timestamp, item['metadata'])
 
 def main():
     global NUM_CONCURRENT_TASKS
+    global FORCE_TASK
     
     parser = argparse.ArgumentParser(description='Reprocess tasks')
     parser.add_argument('--concurrency', help='number of concurrent outstanding tasks', default=1, type=int)
-    parser.add_argument('task', help='task to execute', choices=task_names.keys())
+    parser.add_argument('--force', help='Force task to execute, even if it has already been performed', action='store_true')
+    parser.add_argument('task', help='task to execute', choices=tasks.keys())
     subparsers = parser.add_subparsers()
     all = subparsers.add_parser('all', help='reprocess all')
     all.add_argument('--type', help='only reprocess this type of all files')
@@ -95,11 +136,13 @@ def main():
     args = parser.parse_args()
     
     NUM_CONCURRENT_TASKS = args.concurrency
+    FORCE_TASK = args.force
     
     parsing_result = vars(args)
     to_execute = parsing_result['func']
     del parsing_result['func']
     del parsing_result['concurrency']
+    del parsing_result['force']
     to_execute(**parsing_result)
     
     wait_all()
