@@ -64,7 +64,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'users.middleware.UserMiddleware'
+    'users.middleware.UserMiddleware',
+    'custom_middleware.stripwhitespace.StripWhitespaceMiddleware'
 )
 
 ROOT_URLCONF = 'sirikata-cdn.urls'
@@ -78,7 +79,8 @@ INSTALLED_APPS = (
     'cassandra_storage',
     'users',
     'content',
-    'custom_template_tags'
+    'custom_template_tags',
+    'custom_middleware'
 )
 
 #Unused
