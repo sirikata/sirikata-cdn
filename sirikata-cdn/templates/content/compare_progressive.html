@@ -3,6 +3,33 @@
 
 {% block title %}{{ block.super }} | Progressive Compare{% endblock title %}
 
+{% block js_includes %}
+{{ block.super }}
+<script src="{{ MEDIA_URL }}js/jquery.colorbox-min.js" type="text/javascript"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+	$('span.hoverdisplay').hover(function(e) {
+		$.colorbox.init();
+		$.colorbox({
+			 html: '<p><img src="' + $(this).attr('img1') + '"/><img src="' + $(this).attr('img2') + '"/></p>',
+             top: 0,
+             left: 0,
+             width: 1200,
+             height: 600,
+			 transition: 'none',
+			 speed: 0,
+			 overlayClose: false,
+			 escKey: false,
+			 close: "",
+			 scrolling: false
+		});
+	}, function() {
+	    $.colorbox.remove();
+	});
+});
+</script>
+{% endblock js_includes %} 
+
 {% block main_content %}
 
 <div class="pagelet">
@@ -63,6 +90,7 @@
                 {% endif %}
             </td>
             <td>
+                <span class="{% if item.metadata.types.original.screenshot and item.metadata.types.progressive.screenshot %}hoverdisplay{% endif %}" img1="{% url content.views.download item.metadata.types.original.screenshot %}" img2="{% url content.views.download item.metadata.types.progressive.screenshot %}">
                 {% if item.metadata.types.original.thumbnail %}
                     <img src="{% url content.views.download item.metadata.types.original.thumbnail %}" class = 'tiny_thumbnail' />
                 {% else %}
@@ -74,6 +102,7 @@
                 {% else %}
                     MISSING
                 {% endif %}
+                </span>
             </td>
         </tr>
     {% endfor %}
