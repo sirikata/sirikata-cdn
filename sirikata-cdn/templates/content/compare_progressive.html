@@ -90,7 +90,12 @@ $(document).ready(function() {
                 {% endif %}
             </td>
             <td>
-                <span class="{% if item.metadata.types.original.screenshot and item.metadata.types.progressive.screenshot %}hoverdisplay{% endif %}" img1="{% url content.views.download item.metadata.types.original.screenshot %}" img2="{% url content.views.download item.metadata.types.progressive.screenshot %}">
+                <span class="{% if item.metadata.types.original.screenshot and item.metadata.types.progressive.screenshot %}hoverdisplay{% endif %}"
+                    {% if item.metadata.types.original.screenshot and item.metadata.types.progressive.screenshot %}
+                    img1="{% url content.views.download item.metadata.types.original.screenshot %}"
+                    img2="{% url content.views.download item.metadata.types.progressive.screenshot %}"
+                    {% endif %}
+                    >
                 {% if item.metadata.types.original.thumbnail %}
                     <img src="{% url content.views.download item.metadata.types.original.thumbnail %}" class = 'tiny_thumbnail' />
                 {% else %}
