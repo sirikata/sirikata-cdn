@@ -3,6 +3,7 @@ import os.path
 import time
 from celery.execute import send_task
 import argparse
+import traceback
 
 def detect_screenshot(type, metadata):
     if metadata is None or 'types' not in metadata or type not in metadata['types']:
@@ -58,9 +59,11 @@ def emit_finished_tasks():
             print 'Completed', task_string,
             print t.state
             if t.state == 'FAILURE':
-                print 'Printing exception:'
+                print 'Printing failure result:'
                 print
-                print str(t.result)
+                print 'Failure type:', type(t.result)
+                print 'Failure string:', str(t.result)
+                print 'Traceback:', t.traceback
                 print
         else:
             tokeep.append((t,task_string))
