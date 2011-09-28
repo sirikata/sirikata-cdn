@@ -595,6 +595,7 @@ def download(request, hash, filename=None):
             response['Accept-Ranges'] = 'bytes'
     response['Content-Length'] = str(len(data))
     response['Access-Control-Allow-Origin'] = '*'
+    response['Access-Control-Allow-Headers'] = 'Range'
     return response
 
 def dns(request, filename):
