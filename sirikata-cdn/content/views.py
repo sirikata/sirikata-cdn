@@ -555,7 +555,7 @@ def search(request):
     return render_to_response('content/search.html', view_params, context_instance = RequestContext(request))
 
 def search_json(request):
-    query = request.GET.get('q', '')
+    query = request.REQUEST.get('q', '')
     results = user_search(query)
     view_params = {'results': results}
     response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
