@@ -5,6 +5,21 @@
 
 {% block main_content %}
 <h2>{{ username }}</h2>
+{% if request.user.is_authenticated and request.user.username == username %}
+{% if request.user.access_token %}
+<div class="pagelet">
+<table>
+<thead><th colspan="2">OAuth Access</th></thead>
+<tr><td class="label">Access Token:</td><td><input class="clip_url" type="text" value="{{ request.user.access_token }}"></input></td></tr>
+<tr><td class="label">Access Secret:</td><td><input class="clip_url" type="text" value="{{ request.user.access_secret }}"></input></td></tr>
+</table>
+</div>
+<a href="{% url users.views.remove_access_token %}">Remove Access Token</a>
+{% else %}
+<a href="{% url users.views.generate_access_token %}">Generate Access Token</a>
+{% endif %}
+{% endif %}
+<h3>Uploads</h3>
 <ul>
 {% for up in uploaded %}
     <li>{{ up.timestamp|date:"M-d-Y g:iA" }} -

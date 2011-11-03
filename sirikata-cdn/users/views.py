@@ -12,8 +12,10 @@ from openid.consumer.discover import DiscoveryFailure
 import openid.extensions.ax as ax
 from openid import oidutil
 from cassandra_storage.cassandra_openid import CassandraStore
-from middleware import login_with_openid_identity, associate_openid_login
+from middleware import login_with_openid_identity, associate_openid_login, add_user_metadata
 from middleware import logout_user, get_pending_uploads, get_uploads, get_user_by_username
+import base64
+import os
 
 #Mutes the logging output from openid. Otherwise it prints to stderr
 def dummyOpenIdLoggingFunction(message, level=0):
@@ -182,3 +184,21 @@ def profile(request, username=""):
         'uploaded': get_uploads(username)
     }
     return render_to_response('users/profile.html', view_params, context_instance = RequestContext(request))
+
+def remove_access_token(request):
+    if not request.user['is_authenticated']:
+        return redirect('users.views.login')
+    
+    username = request.session['username']
+    add_user_metadata(request, username, access_token='', access_secret='')
+    
+    return redirect('users.views.profile', username=request.session['username'])
+
+def generate_access_token(request):
+    if not request.user['is_authenticated']:
+        return redirect('users.views.login')
+    
+    username = request.session['username']
+    add_user_metadata(request, username, access_token=base64.urlsafe_b64encode(os.urandom(32)), access_secret=base64.urlsafe_b64encode(os.urandom(32)))
+    
+    return redirect('users.views.profile', username=request.session['username'])

@@ -106,6 +106,10 @@ def associate_openid_login(request, identity_url, openid_email, openid_name, use
     invalidate_user_cache(request)
     return True
 
+def add_user_metadata(request, username, **kwargs):
+    insertRecord(USERS, username, kwargs)
+    invalidate_user_cache(request)
+
 def logout_user(request):
     invalidate_user_cache(request)
     if 'username' in request.session:
@@ -117,11 +121,13 @@ def invalidate_user_cache(request):
 
 def get_user_by_username(username):
     try:
-        cass_user = getRecord(USERS, str(username), columns=['name', 'email'])
+        cass_user = getRecord(USERS, str(username), columns=['name', 'email', 'access_token', 'access_secret'])
         user = {}
         user['username'] = username
         user['name'] = cass_user['name']
         user['email'] = cass_user['email']
+        user['access_token'] = cass_user.get('access_token')
+        user['access_secret'] = cass_user.get('access_secret')
         return user
     except DatabaseError:
         return None
