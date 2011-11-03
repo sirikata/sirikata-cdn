@@ -81,25 +81,27 @@ def openid_return(request):
         return redirect('content.views.browse')
 
     ax_resp = ax.FetchResponse.fromSuccessResponse(response)
-    if not ax_resp:
-        messages.error(request, 'Could not get attributes from OpenID Provider')
-        return redirect('users.views.login')
 
-    try:
-        email = ax_resp.get('http://axschema.org/contact/email')[0]
-    except KeyError:
-        messages.error(request, 'Could not get attributes from OpenID Provider')
-        return redirect('users.views.login')
+    if ax_resp:
+        try:
+            email = ax_resp.get('http://axschema.org/contact/email')[0]
+        except KeyError:
+            email = ''
+    
+        try:
+            first_name = ax_resp.get('http://axschema.org/namePerson/first')[0]
+        except KeyError:
+            first_name = None
+    
+        try:
+            last_name = ax_resp.get('http://axschema.org/namePerson/last')[0]
+        except KeyError:
+            last_name = None
 
-    try:
-        first_name = ax_resp.get('http://axschema.org/namePerson/first')[0]
-    except KeyError:
+    else:
         first_name = None
-
-    try:
-        last_name = ax_resp.get('http://axschema.org/namePerson/last')[0]
-    except KeyError:
         last_name = None
+        email = ''
 
     if first_name == None and last_name == None:
         name = ''
