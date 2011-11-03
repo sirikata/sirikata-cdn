@@ -661,6 +661,8 @@ def dns(request, filename):
         extra_metadata = file_metadata['types'][type_id]['metadata']
         if 'num_triangles' in extra_metadata:
             response['Num-Triangles'] = extra_metadata['num_triangles']
+        if 'zernike' in extra_metadata:
+            response['Zernike']  = ','.join(map(str, extra_metadata['zernike']))
 
     if 'mipmaps' in file_metadata['types'][type_id]:
         mipmaps = file_metadata['types'][type_id]['mipmaps']

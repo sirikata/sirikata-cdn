@@ -65,7 +65,6 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'users.middleware.UserMiddleware',
-    'custom_middleware.stripwhitespace.StripWhitespaceMiddleware'
 )
 
 ROOT_URLCONF = 'sirikata-cdn.urls'
