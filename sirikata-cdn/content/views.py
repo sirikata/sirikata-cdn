@@ -581,6 +581,7 @@ def download(request, hash, filename=None):
                 if len(parts) == 2:
                     try:
                         start = max(0, int(parts[0]))
+                        end = int(parts[1])
                         rangeheader = "bytes %d-%d/%d" % (start, end, len(data))
                         end += 1
                         end = min(len(data), end)
