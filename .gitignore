@@ -5,4 +5,4 @@
 sirikata-cdn/settings.py
 sirikata-cdn/celery_tasks/celeryconfig.py
 sirikata-cdn/cassandra_storage/settings.py
-
+scripts/*.db

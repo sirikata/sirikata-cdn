@@ -77,6 +77,18 @@ def getColRange(cf, rowkey, column_start, column_finish, include_timestamp=False
     except UnavailableException:
         raise UnavailableError('Record %s was unavailable' % (rowkey,))
 
+def getRowRange(cf, **kwargs):
+    try:
+        return cf.get_range(**kwargs)
+    except NotFoundException:
+        raise NotFoundError('Record not found during row range request')
+    except InvalidRequestException:
+        raise InvalidRequestError('Invalid row range request')
+    except TimedOutException:
+        raise TimedOutError('Row range request timed out')
+    except UnavailableException:
+        raise UnavailableError('Record was unavailable during row range request')
+
 def getRecordsByIndex(cf, column, value, count=100, columns=None):
     try:
         expr = pycassa.index.create_index_expression(column, value)

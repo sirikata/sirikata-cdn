@@ -127,6 +127,10 @@ def get_content_by_date(start="", limit=25, reverse=True):
 
     return found_items, older_start, newer_start
 
+def list_content(**kwargs):
+    recs = getRowRange(NAMES, **kwargs)
+    for r in recs:
+        yield r
 
 def get_file_metadata(filename):
     split = filename.split("/")
@@ -154,6 +158,9 @@ def get_hash(hash):
 
     return rec
 
+def delete_hash(hash):
+    removeRecord(FILES, hash)
+
 def save_file_data(hash, data, mimetype):
     try:
         rec = getRecord(FILES, hash, columns=[])
@@ -168,6 +175,13 @@ def save_file_data(hash, data, mimetype):
         rec = insertRecord(FILES, hash, columns={"data": data, "mimetype": mimetype})
     except DatabaseError:
         raise DatabaseError()
+
+def list_file_keys(columns=None):
+    if columns is None:
+        columns = []
+    recs = getRowRange(FILES, columns=columns)
+    for r in recs:
+        yield r
 
 def save_file_name(path, version_num, hash_key, length):
     dict = {'hash': hash_key, 'size': length}
