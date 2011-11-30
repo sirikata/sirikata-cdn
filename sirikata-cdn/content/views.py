@@ -580,10 +580,11 @@ def download(request, hash, filename=None):
                 parts = parts[1].split('-')
                 if len(parts) == 2:
                     try:
-                        start = int(parts[0])
+                        start = max(0, int(parts[0]))
                         end = int(parts[1])
                         rangeheader = "bytes %d-%d/%d" % (start, end, len(data))
                         end += 1
+                        end = min(len(data), end)
                         if start >= 0 and end > 0 and \
                             start < end and end <= len(data):
                             rangedresponse = True
