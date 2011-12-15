@@ -4,6 +4,7 @@ import datetime
 import operator
 
 USERS = getColumnFamily('Users')
+API_CONSUMERS = getColumnFamily('APIConsumers')
 
 def get_pending_uploads(username):
     try:
@@ -110,6 +111,30 @@ def add_user_metadata(request, username, **kwargs):
     insertRecord(USERS, username, kwargs)
     invalidate_user_cache(request)
 
+def remove_api_consumer(request):
+    username = request.user['username']
+    consumer_key = request.user['consumer_key']
+    
+    removeRecord(API_CONSUMERS, consumer_key)
+    
+    insertRecord(USERS, username, dict(
+                 consumer_key = '',
+                 consumer_secret = ''))
+    
+    invalidate_user_cache(request)
+
+def add_api_consumer(request, username, consumer_key, consumer_secret):
+    insertRecord(API_CONSUMERS, consumer_key, dict(
+                 username = username,
+                 consumer_key = consumer_key,
+                 consumer_secret = consumer_secret))
+
+    insertRecord(USERS, username, dict(
+                 consumer_key = consumer_key,
+                 consumer_secret = consumer_secret))
+    
+    invalidate_user_cache(request)
+
 def logout_user(request):
     invalidate_user_cache(request)
     if 'username' in request.session:
@@ -121,13 +146,20 @@ def invalidate_user_cache(request):
 
 def get_user_by_username(username):
     try:
-        cass_user = getRecord(USERS, str(username), columns=['name', 'email', 'access_token', 'access_secret'])
+        cass_user = getRecord(USERS, str(username), columns=['name',
+                                                             'email',
+                                                             'access_token',
+                                                             'access_secret',
+                                                             'consumer_key',
+                                                             'consumer_secret'])
         user = {}
         user['username'] = username
         user['name'] = cass_user['name']
         user['email'] = cass_user['email']
         user['access_token'] = cass_user.get('access_token')
         user['access_secret'] = cass_user.get('access_secret')
+        user['consumer_key'] = cass_user.get('consumer_key')
+        user['consumer_secret'] = cass_user.get('consumer_secret')
         return user
     except DatabaseError:
         return None

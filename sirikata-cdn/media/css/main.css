@@ -336,3 +336,7 @@ div#title_accordian p + p {
     margin: 20px 0px 0px 0px;
 }
 
+div.section_box {
+	margin: 0px 0px 0px 20px;
+}
+	

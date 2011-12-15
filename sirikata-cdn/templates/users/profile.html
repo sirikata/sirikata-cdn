@@ -5,7 +5,11 @@
 
 {% block main_content %}
 <h2>{{ username }}</h2>
+
 {% if request.user.is_authenticated and request.user.username == username %}
+<h3>Access Token</h3>
+<div class="section_box">
+<p>If you give this out, applications can upload to your account on your behalf.</p>
 {% if request.user.access_token %}
 <div class="pagelet">
 <table>
@@ -18,7 +22,28 @@
 {% else %}
 <a href="{% url users.views.generate_access_token %}">Generate Access Token</a>
 {% endif %}
+</div>
 {% endif %}
+
+{% if request.user.is_authenticated and request.user.username == username %}
+<h3>API Key</h3>
+<div class="section_box">
+<p>You can use this to access open3dhub from an application.</p>
+{% if request.user.consumer_key %}
+<div class="pagelet">
+<table>
+<thead><th colspan="2">API Key</th></thead>
+<tr><td class="label">Consumer Key:</td><td><input class="clip_url" type="text" value="{{ request.user.consumer_key }}"></input></td></tr>
+<tr><td class="label">Consumer Secret:</td><td><input class="clip_url" type="text" value="{{ request.user.consumer_secret }}"></input></td></tr>
+</table>
+</div>
+<a href="{% url users.views.remove_consumer_token %}">Remove API Key</a>
+{% else %}
+<a href="{% url users.views.generate_consumer_token %}">Generate API Key</a>
+{% endif %}
+</div>
+{% endif %}
+
 <h3>Uploads</h3>
 <ul>
 {% for up in uploaded %}

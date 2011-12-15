@@ -14,6 +14,7 @@ from openid import oidutil
 from cassandra_storage.cassandra_openid import CassandraStore
 from middleware import login_with_openid_identity, associate_openid_login, add_user_metadata
 from middleware import logout_user, get_pending_uploads, get_uploads, get_user_by_username
+from middleware import add_api_consumer, remove_api_consumer
 import base64
 import os
 
@@ -190,7 +191,9 @@ def remove_access_token(request):
         return redirect('users.views.login')
     
     username = request.session['username']
-    add_user_metadata(request, username, access_token='', access_secret='')
+    add_user_metadata(request, username,
+                      access_token='',
+                      access_secret='')
     
     return redirect('users.views.profile', username=request.session['username'])
 
@@ -199,6 +202,29 @@ def generate_access_token(request):
         return redirect('users.views.login')
     
     username = request.session['username']
-    add_user_metadata(request, username, access_token=base64.urlsafe_b64encode(os.urandom(32)), access_secret=base64.urlsafe_b64encode(os.urandom(32)))
+    add_user_metadata(request, username,
+                      access_token=base64.urlsafe_b64encode(os.urandom(32)),
+                      access_secret=base64.urlsafe_b64encode(os.urandom(32)))
     
     return redirect('users.views.profile', username=request.session['username'])
+
+def remove_consumer_token(request):
+    if not request.user['is_authenticated']:
+        return redirect('users.views.login')
+    
+    remove_api_consumer(request)
+    
+    return redirect('users.views.profile', username=request.session['username'])
+
+def generate_consumer_token(request):
+    if not request.user['is_authenticated']:
+        return redirect('users.views.login')
+    
+    consumer_key = base64.urlsafe_b64encode(os.urandom(32))
+    consumer_secret = base64.urlsafe_b64encode(os.urandom(32))
+    username = request.session['username']
+    
+    add_api_consumer(request, username, consumer_key, consumer_secret)
+    
+    return redirect('users.views.profile', username=request.session['username'])
+    
