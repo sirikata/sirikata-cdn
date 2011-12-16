@@ -13,6 +13,8 @@ import re
 import posixpath
 from cassandra_storage.cassandra_util import NotFoundError
 
+from oauth_server import oauth_server
+
 from users.middleware import save_upload_task, get_pending_upload, \
                              remove_pending_upload, save_file_upload
 
@@ -357,6 +359,57 @@ def upload_import(request, task_id):
                    'task_id': task_id,
                    'filename': filename}
     return render_to_response('content/import.html', view_params, context_instance = RequestContext(request))
+
+class APIUpload(UploadImport, UploadForm):
+    def __init__(self, *args, **kwargs):
+        super(APIUpload, self).__init__(*args, **kwargs)
+
+@csrf_exempt
+def api_upload(request):
+    result = {}
+    if request.method != 'POST':
+        result['success'] = False
+        result['error'] = 'Invalid request'
+    else:
+        oauth_request = oauth_server.request_from_django(request)
+        verified = oauth_server.verify_access_request(oauth_request)
+        if not verified:
+            result['success'] = False
+            result['error'] = 'OAuth Authentication Error'
+        else:
+            form = APIUpload({'path': oauth_request.get_parameter('path'),
+                              'title': oauth_request.get_parameter('title'),
+                              'description': oauth_request.get_parameter('description'),
+                              'labels': oauth_request.get_parameter('labels')},
+                             request.FILES)
+            if not form.is_valid():
+                result['success'] = False
+                errors = []
+                for field in form:
+                    if field.errors:
+                        errors.append("%s:%s" % (field.name, field.errors))
+                result['error'] = 'Invalid form fields: ' + str(form.errors) #', '.join(errors)
+            else:
+                result['success'] = True
+    
+    response = HttpResponse(simplejson.dumps(result, default=json_handler, indent=4), mimetype='application/json')
+    return response
+        #form = UploadForm(['File'], request.POST, request.FILES)
+        #if form.is_valid():
+        #    upfile = request.FILES['File']
+        #    task = import_upload.delay(upfile.row_key, subfiles={})
+#
+#            save_upload_task(username=request.session['username'],
+#                             task_id=task.task_id,
+#                             row_key=upfile.row_key,
+#                             filename=upfile.name,
+#                             subfiles={},
+#                             dae_choice="",
+#                             task_name="import_upload")
+#
+#            return redirect('content.views.upload_processing', task_id=task.task_id)
+#        else:
+#            view_params = {'form':form}
 
 class EditFile(forms.Form):
     def __init__(self, *args, **kwargs):

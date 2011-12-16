@@ -123,6 +123,22 @@ def remove_api_consumer(request):
     
     invalidate_user_cache(request)
 
+def get_api_consumer(consumer_key):
+    try:
+        consumer_record = getRecord(API_CONSUMERS, consumer_key, columns=['consumer_key', 'consumer_secret', 'username'])
+    except DatabaseError:
+        return None
+    
+    if not(all(k in consumer_record for k in ['consumer_key', 'consumer_secret', 'username'])):
+        return None
+    
+    consumer_info = {}
+    consumer_info['consumer_key'] = consumer_record['consumer_key']
+    consumer_info['consumer_secret'] = consumer_record['consumer_secret']
+    consumer_info['username'] = consumer_record['username']
+    
+    return consumer_info
+
 def add_api_consumer(request, username, consumer_key, consumer_secret):
     insertRecord(API_CONSUMERS, consumer_key, dict(
                  username = username,

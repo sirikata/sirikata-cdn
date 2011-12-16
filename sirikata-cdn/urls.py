@@ -33,6 +33,7 @@ urlpatterns = patterns('',
     (r'^about/$', 'misc.views.about'),
     (r'^search$', 'content.views.search'),
     (r'^compare/progressive$', 'content.views.compare_progressive'),
+    (r'^api/upload$', 'content.views.api_upload'),
 )
 
 if settings.DEBUG:
