@@ -119,6 +119,7 @@ def upload_choice(request, task_id):
 class UploadForm(forms.Form):
     def __init__(self, file_names=['File'], *args, **kwargs):
         super(UploadForm, self).__init__(*args, **kwargs)
+        self.file_names = file_names
         for f in file_names:
             self.fields[f] = forms.FileField(label=f, required=True, widget=forms.FileInput(attrs={
                 'class': '{required:true}'
@@ -199,11 +200,15 @@ def upload(request, task_id=None):
     return render_to_response('content/upload.html', view_params, context_instance = RequestContext(request))
 
 def upload_processing(request, task_id='', action=False):
-    if not request.user['is_authenticated']:
-        return redirect('users.views.login')
+    username = request.GET.get('username')
+    user_authed = False
+    if request.user['is_authenticated']:
+        user_authed = True
+        if username is None:
+            username = request.session['username']
 
     try:
-        upload_rec = get_pending_upload(request.session['username'], task_id)
+        upload_rec = get_pending_upload(username, task_id)
     except:
         return HttpResponseForbidden()
 
@@ -212,19 +217,21 @@ def upload_processing(request, task_id='', action=False):
     xhr = request.GET.has_key('xhr')
     if xhr:
         json_result = {'state':res.state}
+        if res.state == 'SUCCESS':
+            json_result['path'] = res.result
         return HttpResponse(simplejson.dumps(json_result, default=json_handler), mimetype='application/json')
 
-    if action == 'confirm':
+    if user_authed and username == request.session['username'] and action == 'confirm':
         if upload_rec['task_name'] == 'import_upload':
             try:
-                remove_pending_upload(request.session['username'], task_id)
+                remove_pending_upload(username, task_id)
             except:
                 return HttpResponseServerError("There was an error removing your upload record.")
             messages.info(request, 'Upload removed')
             return redirect('users.views.uploads')
         elif res.state == "FAILURE":
             try:
-                remove_pending_upload(request.session['username'], task_id)
+                remove_pending_upload(username, task_id)
             except:
                 return HttpResponseServerError("There was an error removing your upload record.")
             messages.info(request, 'Upload removed')
@@ -232,11 +239,11 @@ def upload_processing(request, task_id='', action=False):
         else:
             path = res.result
             try:
-                save_file_upload(request.session['username'], path)
+                save_file_upload(username, path)
             except:
                 return HttpResponseServerError("There was an error saving your upload.")
             try:
-                remove_pending_upload(request.session['username'], task_id)
+                remove_pending_upload(username, task_id)
             except:
                 return HttpResponseServerError("There was an error removing your upload record.")
             messages.info(request, 'Upload saved')
@@ -363,6 +370,15 @@ def upload_import(request, task_id):
 class APIUpload(UploadImport, UploadForm):
     def __init__(self, *args, **kwargs):
         super(APIUpload, self).__init__(*args, **kwargs)
+        self.fields['main_filename'] = forms.CharField(required=True, min_length=1, max_length=100, widget=forms.TextInput(attrs={
+            'class': '{required:true, minlength:1, maxlength:100}'
+        }))
+        
+    def clean_main_filename(self):
+        main_filename = self.cleaned_data['main_filename']
+        if main_filename not in self.file_names:
+            raise forms.ValidationError("Given main_filename not in uploaded files.")
+        return main_filename
 
 @csrf_exempt
 def api_upload(request):
@@ -377,39 +393,53 @@ def api_upload(request):
             result['success'] = False
             result['error'] = 'OAuth Authentication Error'
         else:
-            form = APIUpload({'path': oauth_request.get_parameter('path'),
-                              'title': oauth_request.get_parameter('title'),
-                              'description': oauth_request.get_parameter('description'),
-                              'labels': oauth_request.get_parameter('labels')},
-                             request.FILES)
+            form = APIUpload(data={'path': oauth_request.get_parameter('path'),
+                                   'main_filename': oauth_request.get_parameter('main_filename'),
+                                   'title': oauth_request.get_parameter('title'),
+                                   'description': oauth_request.get_parameter('description'),
+                                   'labels': oauth_request.get_parameter('labels')},
+                             files=request.FILES,
+                             file_names=request.FILES.keys())
             if not form.is_valid():
                 result['success'] = False
                 errors = []
                 for field in form:
                     if field.errors:
                         errors.append("%s:%s" % (field.name, field.errors))
-                result['error'] = 'Invalid form fields: ' + str(form.errors) #', '.join(errors)
+                result['error'] = "Invalid form fields.\n" + form.errors.as_text()
+                
             else:
+                title = form.cleaned_data['title']
+                username = oauth_request.get_parameter('username')
+                path = "/%s/%s" % (username, form.cleaned_data['path'])
+                description = form.cleaned_data['description']
+                labels = form.cleaned_data['labels'].split(',')
+                labels = [label.strip() for label in labels]
+                main_filename = form.cleaned_data['main_filename']
+    
+                main_rowkey = request.FILES[main_filename].row_key
+                subfiles = {}
+                for fname, fobj in request.FILES.iteritems():
+                    if fname != main_filename:
+                        subfiles[fname] = fobj.row_key
+                dae_choice = ""
+                filename = main_filename
+    
+                task = place_upload.delay(main_rowkey, subfiles, title, path, description, run_subtasks=False, create_index=False)
+    
+                save_upload_task(username=username,
+                                 task_id=task.task_id,
+                                 row_key=main_rowkey,
+                                 filename=filename,
+                                 subfiles=subfiles,
+                                 dae_choice="",
+                                 task_name="place_upload")
+                
                 result['success'] = True
+                result['task_id'] = task.task_id
     
     response = HttpResponse(simplejson.dumps(result, default=json_handler, indent=4), mimetype='application/json')
     return response
-        #form = UploadForm(['File'], request.POST, request.FILES)
-        #if form.is_valid():
-        #    upfile = request.FILES['File']
-        #    task = import_upload.delay(upfile.row_key, subfiles={})
-#
-#            save_upload_task(username=request.session['username'],
-#                             task_id=task.task_id,
-#                             row_key=upfile.row_key,
-#                             filename=upfile.name,
-#                             subfiles={},
-#                             dae_choice="",
-#                             task_name="import_upload")
-#
-#            return redirect('content.views.upload_processing', task_id=task.task_id)
-#        else:
-#            view_params = {'form':form}
 
 class EditFile(forms.Form):
     def __init__(self, *args, **kwargs):

@@ -1,4 +1,5 @@
 import oauth2
+import httplib2
 import urlparse
 import sys
 import pprint
@@ -13,12 +14,13 @@ import os
 #BASE_OPEN3DHUB = 'http://open3dhub.com'
 BASE_OPEN3DHUB = 'http://localhost:8000' 
 UPLOAD_URL = BASE_OPEN3DHUB + '/api/upload'
-UPLOAD_STATUS_URL = BASE_OPEN3DHUB + '/api/upload-status'
+UPLOAD_STATUS_URL = BASE_OPEN3DHUB + '/upload/processing/%TASK_ID%?xhr&username=%USERNAME%'
 
 CONSUMER_KEY = 'efgPOA8pZ3mLNNcPMzPRPwQH6zzENcOiC6bd4iklWzQ='
 CONSUMER_SECRET = 'xbY2_AuwURK5pCpIU9XB6nROMofDv_O-gPdhaRsT2Mk='
 ACCESS_KEY = 'IJnw5e6pxkcI-Upa3RDANjL5HUcrc10BICM7eiRh-XA='
 ACCESS_SECRET = 'xCf-CtG99snn2-e1YrZHD0OR4nEW6WHjStGpU-MQKLQ='
+USERNAME = 'jterrace'
 
 # Register the poster module's streaming http handlers with urllib2
 register_openers()
@@ -35,7 +37,7 @@ def exitprint(resp, content):
 
 def main():
     if len(sys.argv) < 2:
-        print >> sys.stderr, 'Usage: python upload.py file1 [file2 [file3 ..]]'
+        print >> sys.stderr, 'Usage: python upload.py main_file [subfile1 [subfile2 ..]]'
         sys.exit(1)
     
     opts, args = getopt.getopt(sys.argv[1:], ':')
@@ -48,11 +50,14 @@ def main():
     consumer = oauth2.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
     access_token = oauth2.Token(ACCESS_KEY, ACCESS_SECRET)
     
+    main_filename = os.path.basename(upload_files[0])
+    
     upload_params = dict(title = 'Test Model',
-                         username = 'jterrace',
-                         path = '/jterrace/apitest/sphere.dae',
-                         description='some sphere',
-                         labels='some stuff')
+                         username = USERNAME,
+                         path = 'apiupload/' + main_filename,
+                         main_filename = main_filename,
+                         description = 'some sphere',
+                         labels = 'some stuff')
     
     req = oauth2.Request.from_consumer_and_token(consumer,
                                                  token=access_token,
@@ -68,8 +73,8 @@ def main():
     for key, val in all_upload_params.iteritems():
         all_upload_params[key] = val[0]
     
-    for i, fpath in enumerate(upload_files):
-        all_upload_params['file' + str(i)] = open(fpath, 'rb')
+    for fpath in upload_files:
+        all_upload_params[os.path.basename(fpath)] = open(fpath, 'rb')
     datagen, headers = multipart_encode(all_upload_params)
     request = urllib2.Request(UPLOAD_URL, datagen, headers)
     
@@ -82,37 +87,37 @@ def main():
         sys.exit(1)
         
     result = json.loads(respdata)
-    print result
-#    if result.get('success') != True or 'uploadid' not in result:
-#        print >> sys.stderr, 'Upload failed. Error = ', result.get('error')
-#        print >> sys.stderr
-#        sys.exit(1)
-#    
-#    uploadid = result['uploadid']
-#    print 'Succeeded in submitting upload. Upload id = %s Checking status...' % (uploadid,)
-#    print
-#    
-#    client = oauth2.Client(consumer, token)
-#    
-#    complete = False
-#    while not complete:
-#        resp, content = client.request('%s?uploadid=%s' % (UPLOAD_STATUS_URL, uploadid), "GET")
-#        if resp['status'] != '200':
-#            exitprint(resp, content)
-#        result = json.loads(content)
-#        if 'complete' not in result:
-#            exitprint(resp, content)
-#        complete = result['complete']
-#        if not(complete == False or complete == True):
-#            complete = False
-#        if complete == False:
-#            print 'Not complete. Status = %s' % (result.get('status_message').strip())
-#        time.sleep(2)
-#        
-#    print
-#    print 'Finished. Status = %s' % (result.get('status_message'),)
-#    print
-#    print 'You can find your upload at: %s%s' % (VIEWER_URL, uploadid)
+
+    if result.get('success') != True or 'task_id' not in result:
+        print >> sys.stderr, 'Upload failed. Error = ', result.get('error')
+        print >> sys.stderr
+        sys.exit(1)
+    
+    task_id = result['task_id']
+    print 'Succeeded in submitting upload. Task ID = %s Checking status...' % (task_id,)
+    print
+    
+    complete = False
+    toreq = UPLOAD_STATUS_URL.replace("%TASK_ID%", task_id)
+    toreq = toreq.replace("%USERNAME%", USERNAME)
+    h = httplib2.Http()
+    while not complete:
+        resp, content = h.request(toreq, "GET")
+        if resp['status'] != '200':
+            exitprint(resp, content)
+        result = json.loads(content)
+        if 'state' not in result:
+            exitprint(resp, content)
+        complete = (result['state'] == 'SUCCESS' or result['state'] == 'FAILED')
+        if complete == False:
+            print 'Not complete. State = %s' % (result.get('state'))
+        time.sleep(0.5)
+        
+    print
+    print 'Finished. State = %s' % (result.get('state'),)
+    print
+    if result.get('state') == 'SUCCESS':
+        print "New upload has path: '%s'" % (result.get('path'))
     
 if __name__ == '__main__':
     main()

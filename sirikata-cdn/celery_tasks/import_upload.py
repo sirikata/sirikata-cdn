@@ -192,7 +192,7 @@ def import_upload(main_rowkey, subfiles, selected_dae=None):
     return dae_zip_name
 
 @task
-def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None):
+def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None, run_subtasks=True, create_index=True):
     import_upload.update_state(state="LOADING")
     file_data = get_temp_file(main_rowkey)
     (zip, dae_zip_name, dae_data) = get_file_or_zip(file_data, selected_dae)
@@ -264,15 +264,16 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     try:
         save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),
                           subfile_names, zip_hex_key, "original", title,
-                          description)
+                          description, create_index=create_index)
     except cass.DatabaseError:
         raise DatabaseError()
 
     path_with_vers = "%s/%s" % (path, new_version_num)
 
-    send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[path_with_vers, "original"])
-    send_task("celery_tasks.generate_metadata.generate_metadata", args=[path_with_vers, "original"])
-    send_task("celery_tasks.generate_optimized.generate_optimized", args=[path_with_vers, "original"])
-    send_task("celery_tasks.generate_progressive.generate_progressive", args=[path_with_vers, "original"])
+    if run_subtasks:
+        send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[path_with_vers, "original"])
+        send_task("celery_tasks.generate_metadata.generate_metadata", args=[path_with_vers, "original"])
+        send_task("celery_tasks.generate_optimized.generate_optimized", args=[path_with_vers, "original"])
+        send_task("celery_tasks.generate_progressive.generate_progressive", args=[path_with_vers, "original"])
     
     return path_with_vers

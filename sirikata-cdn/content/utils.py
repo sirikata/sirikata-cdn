@@ -188,17 +188,20 @@ def save_file_name(path, version_num, hash_key, length):
     col_val = json.dumps(dict)
     insertRecord(NAMES, path, columns={version_num: col_val})
 
-def save_version_type(path, version_num, hash_key, length, subfile_names, zip_key, type_id, title=None, description=None):
+def save_version_type(path, version_num, hash_key, length, subfile_names, zip_key, type_id, title=None, description=None, create_index=True):
     try:
         rec = getRecord(NAMES, path, columns=[version_num])
         version_dict = json.loads(rec[version_num])
     except NotFoundError:
         version_dict = {}
 
-    create_index = False
+    if create_index and 'types' not in version_dict:
+        create_index = True
+    else:
+        create_index = False
+
     if 'types' not in version_dict:
         version_dict['types'] = {}
-        create_index = True
 
     if 'title' not in version_dict:
         version_dict['title'] = title
