@@ -274,6 +274,7 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
         send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[path_with_vers, "original"])
         send_task("celery_tasks.generate_metadata.generate_metadata", args=[path_with_vers, "original"])
         send_task("celery_tasks.generate_optimized.generate_optimized", args=[path_with_vers, "original"])
-        send_task("celery_tasks.generate_progressive.generate_progressive", args=[path_with_vers, "original"])
+        #FIXME: not autorunning this now because it takes too long and is error-prone
+        #send_task("celery_tasks.generate_progressive.generate_progressive", args=[path_with_vers, "original"])
     
     return path_with_vers

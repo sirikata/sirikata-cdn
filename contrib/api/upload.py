@@ -14,7 +14,7 @@ import os
 #BASE_OPEN3DHUB = 'http://open3dhub.com'
 BASE_OPEN3DHUB = 'http://localhost:8000' 
 UPLOAD_URL = BASE_OPEN3DHUB + '/api/upload'
-UPLOAD_STATUS_URL = BASE_OPEN3DHUB + '/upload/processing/%TASK_ID%?xhr&username=%USERNAME%'
+UPLOAD_STATUS_URL = BASE_OPEN3DHUB + '/upload/processing/%TASK_ID%?api&username=%USERNAME%'
 
 CONSUMER_KEY = 'efgPOA8pZ3mLNNcPMzPRPwQH6zzENcOiC6bd4iklWzQ='
 CONSUMER_SECRET = 'xbY2_AuwURK5pCpIU9XB6nROMofDv_O-gPdhaRsT2Mk='

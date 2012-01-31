@@ -221,6 +221,27 @@ def upload_processing(request, task_id='', action=False):
             json_result['path'] = res.result
         return HttpResponse(simplejson.dumps(json_result, default=json_handler), mimetype='application/json')
 
+    api = request.GET.has_key('api')
+    if api:
+        json_result = {'state':res.state}
+        if res.state == 'FAILURE':
+            try:
+                remove_pending_upload(username, task_id)
+            except:
+                return HttpResponseServerError("There was an error removing your upload record.")
+        elif res.state == 'SUCCESS':
+            path = res.result
+            json_result['path'] = path
+            try:
+                save_file_upload(username, path)
+            except:
+                return HttpResponseServerError("There was an error saving your upload.")
+            try:
+                remove_pending_upload(username, task_id)
+            except:
+                return HttpResponseServerError("There was an error removing your upload record.")
+        return HttpResponse(simplejson.dumps(json_result, default=json_handler), mimetype='application/json')
+
     if user_authed and username == request.session['username'] and action == 'confirm':
         if upload_rec['task_name'] == 'import_upload':
             try:
@@ -425,7 +446,7 @@ def api_upload(request):
                 dae_choice = ""
                 filename = main_filename
     
-                task = place_upload.delay(main_rowkey, subfiles, title, path, description, run_subtasks=False, create_index=False)
+                task = place_upload.delay(main_rowkey, subfiles, title, path, description, run_subtasks=True, create_index=True)
     
                 save_upload_task(username=username,
                                  task_id=task.task_id,
