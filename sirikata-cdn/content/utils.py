@@ -42,7 +42,7 @@ def get_content_by_name(names):
 
 def get_content_by_date(start="", limit=25, reverse=True):
     try:
-        index_rows = getRecord(NAMESBYTIME, 'index_rows', columns=['0'])
+        index_rows = getRecord(NAMESBYTIME, 'index_rows', columns=[0])
     except DatabaseError:
         return {}, None, None
 
@@ -217,12 +217,12 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, zip_ke
 
     if create_index:
         try:
-            index_rows = getRecord(NAMESBYTIME, "index_rows", columns=['0'])
+            index_rows = getRecord(NAMESBYTIME, "index_rows", columns=[0])
         except NotFoundError:
             index_rows = None
 
         if index_rows is None:
-            insertRecord(NAMESBYTIME, "index_rows", columns={"0": "0"})
+            insertRecord(NAMESBYTIME, "index_rows", columns={0: "0"})
             cur_index_row = "0"
         else:
             cur_index_row = index_rows[0].split(",")[-1]
