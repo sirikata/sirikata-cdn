@@ -9,6 +9,7 @@ Website
 * pycassa
 * openid
 * celery
+* oauth2
 
 You can install these with the webserver requirements file with this command:
 
