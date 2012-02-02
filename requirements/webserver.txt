@@ -1,0 +1,8 @@
+# Celery needs a patch for pycassa 1.4, and no released version yet
+#  - It also depends on latest kombu from git, so pull that in too
+git+git://github.com/ask/kombu.git@a98dec5e500d6
+git+git://github.com/ask/celery.git@d0417d7b9866
+
+django==1.3.1
+pycassa==1.4.0
+python-openid==2.2.5

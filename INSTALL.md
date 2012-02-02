@@ -4,11 +4,15 @@ Dependencies
 Website
 -------
 
-* django (1.2.5) - apt-get install python-django
-* thrift (0.7) - pip install thrift
-* pycassa (1.1) - pip install pycassa
-* openid (2.2.5) - pip install python-openid
-* celery (2.3.1) - pip install celery
+* django
+* thrift
+* pycassa
+* openid
+* celery
+
+You can install these with the webserver requirements file with this command:
+
+    pip install -U -r requirements/webserver.txt
 
 Celery Daemon
 -------------
