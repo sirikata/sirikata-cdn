@@ -9,4 +9,5 @@ database backend, interfaced with using [pycassa](https://github.com/pycassa/pyc
 
 Installation
 ============
-Coming soon!
+
+See the INSTALL.md file in this directory.
