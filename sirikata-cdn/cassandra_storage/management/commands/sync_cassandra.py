@@ -25,11 +25,13 @@ class Command(NoArgsCommand):
             pass
         
         REPLICATION_STRATEGY = getattr(pycassa.system_manager, settings.CASSANDRA_REPLICATION_STRATEGY)
+        strategy_options = settings.CASSANDRA_STRATEGY_OPTIONS or {}
+        replication_factor = settings.CASSANDRA_REPLICATION_FACTOR
+        strategy_options['replication_factor'] = str(replication_factor)
         
         sys.create_keyspace(settings.CASSANDRA_KEYSPACE,
-                            replication_factor=settings.CASSANDRA_REPLICATION_FACTOR,
                             replication_strategy=REPLICATION_STRATEGY,
-                            strategy_options=settings.CASSANDRA_STRATEGY_OPTIONS)
+                            strategy_options=strategy_options)
         sys.create_column_family(settings.CASSANDRA_KEYSPACE, 'Users', comparator_type=UTF8_TYPE)
         sys.alter_column(settings.CASSANDRA_KEYSPACE, 'Users', 'name', UTF8_TYPE)
         sys.alter_column(settings.CASSANDRA_KEYSPACE, 'Users', 'email', UTF8_TYPE)
