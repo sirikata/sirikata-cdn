@@ -14,6 +14,7 @@ import posixpath
 from cassandra_storage.cassandra_util import NotFoundError
 
 from oauth_server import oauth_server
+import oauth2
 
 from users.middleware import save_upload_task, get_pending_upload, \
                              remove_pending_upload, save_file_upload
@@ -414,20 +415,29 @@ def api_upload(request):
             result['success'] = False
             result['error'] = 'OAuth Authentication Error'
         else:
-            form = APIUpload(data={'path': oauth_request.get_parameter('path'),
-                                   'main_filename': oauth_request.get_parameter('main_filename'),
-                                   'title': oauth_request.get_parameter('title'),
-                                   'description': oauth_request.get_parameter('description'),
-                                   'labels': oauth_request.get_parameter('labels')},
+            upload_data = {}
+            try:
+                upload_data = {'path': oauth_request.get_parameter('path'),
+                               'main_filename': oauth_request.get_parameter('main_filename'),
+                               'title': oauth_request.get_parameter('title'),
+                               'description': oauth_request.get_parameter('description'),
+                               'labels': oauth_request.get_parameter('labels')}
+            except oauth2.Error as oauth_error:
+                result['success'] = False
+                result['error'] = str(oauth_error)
+
+            form = APIUpload(data=upload_data,
                              files=request.FILES,
                              file_names=request.FILES.keys())
             if not form.is_valid():
                 result['success'] = False
-                errors = []
-                for field in form:
-                    if field.errors:
-                        errors.append("%s:%s" % (field.name, field.errors))
-                result['error'] = "Invalid form fields.\n" + form.errors.as_text()
+                # Only log these errors if we haven't encountered some other error first.
+                if 'error' not in result:
+                    errors = []
+                    for field in form:
+                        if field.errors:
+                            errors.append("%s:%s" % (field.name, field.errors))
+                    result['error'] = "Invalid form fields.\n" + form.errors.as_text()
                 
             else:
                 title = form.cleaned_data['title']
