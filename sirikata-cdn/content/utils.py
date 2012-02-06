@@ -52,7 +52,12 @@ def get_content_by_date(start="", limit=25, reverse=True):
         extra_fetch = 1
     else:
         extra_fetch = 2
-    content_paths = getColRange(NAMESBYTIME, cur_index_row, column_start=start,
+        
+    try:
+        long_start = long(start)
+    except ValueError:
+        long_start = ""
+    content_paths = getColRange(NAMESBYTIME, cur_index_row, column_start=long_start,
                                 column_finish="", column_count=limit+extra_fetch, column_reversed=reverse)
 
     older_start = None
