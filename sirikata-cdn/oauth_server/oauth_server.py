@@ -82,8 +82,10 @@ def request_from_django(request):
     if request.META.has_key('HTTP_AUTHORIZATION'):
         auth_header['Authorization'] = request.META['HTTP_AUTHORIZATION']
     parameters = dict(request.REQUEST.items())
+    # Query string args are included in parameters, make sure we don't use them twice
+    full_uri_without_qargs = request.build_absolute_uri(request.path)
     oauth_request = oauth2.Request.from_request(request.method, 
-                                               request.build_absolute_uri(), 
+                                               full_uri_without_qargs,
                                                headers=auth_header,
                                                parameters=parameters)
     return oauth_request
