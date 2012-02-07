@@ -108,7 +108,7 @@ def main():
         result = json.loads(content)
         if 'state' not in result:
             exitprint(resp, content)
-        complete = (result['state'] == 'SUCCESS' or result['state'] == 'FAILED')
+        complete = (result['state'] == 'SUCCESS' or result['state'] == 'FAILURE')
         if complete == False:
             print 'Not complete. State = %s' % (result.get('state'))
         time.sleep(0.5)
