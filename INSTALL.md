@@ -101,3 +101,22 @@ Setup
   http://localhost:8000:
 
         python sirikata-cdn/manage.py runserver --settings=sirikata-cdn.settings
+
+Notes
+=====
+
+* Cassandra can eat up a lot of memory with its default configuration,
+  and often won't play well with other services because of this.
+  Especially for development, you'll probably want to adjust its memory
+  settings. These are some usable values for development:
+
+        MAX_HEAP_SIZE="200M"
+        HEAP_NEWSIZE="50M"
+        flush_largest_memtables_at: 0.2
+        reduce_cache_sizes_at: 0.3
+        reduce_cache_capacity_to: 0.1
+
+* To support large objects in Cassandra, adjust these values:
+
+        thrift_framed_transport_size_in_mb: 90
+        thrift_max_message_length_in_mb: 100
