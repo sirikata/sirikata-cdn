@@ -14,7 +14,6 @@ import posixpath
 from cassandra_storage.cassandra_util import NotFoundError
 
 from oauth_server import oauth_server
-import oauth2
 
 from users.middleware import save_upload_task, get_pending_upload, \
                              remove_pending_upload, save_file_upload
@@ -415,16 +414,11 @@ def api_upload(request):
             result['success'] = False
             result['error'] = 'OAuth Authentication Error'
         else:
-            upload_data = {}
-            try:
-                upload_data = {'path': oauth_request.get_parameter('path'),
-                               'main_filename': oauth_request.get_parameter('main_filename'),
-                               'title': oauth_request.get_parameter('title'),
-                               'description': oauth_request.get_parameter('description'),
-                               'labels': oauth_request.get_parameter('labels')}
-            except oauth2.Error as oauth_error:
-                result['success'] = False
-                result['error'] = str(oauth_error)
+            upload_data = {'path': oauth_request.get('path'),
+                           'main_filename': oauth_request.get('main_filename'),
+                           'title': oauth_request.get('title'),
+                           'description': oauth_request.get('description'),
+                           'labels': oauth_request.get('labels')}
 
             form = APIUpload(data=upload_data,
                              files=request.FILES,
