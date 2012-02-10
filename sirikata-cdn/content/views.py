@@ -391,15 +391,52 @@ def upload_import(request, task_id):
 class APIUpload(UploadImport, UploadForm):
     def __init__(self, *args, **kwargs):
         super(APIUpload, self).__init__(*args, **kwargs)
-        self.fields['main_filename'] = forms.CharField(required=True, min_length=1, max_length=100, widget=forms.TextInput(attrs={
-            'class': '{required:true, minlength:1, maxlength:100}'
-        }))
+        self.fields['main_filename'] = forms.CharField(required=True, min_length=1, max_length=100)
+        self.fields['subfiles'] = forms.CharField(required=False, min_length=1, max_length=10000)
+        self.fields['ephemeral'] = forms.BooleanField(required=False, initial=False)
+        # minimum 10 minutes, maximum 24 hours, default 1 hour
+        self.fields['ttl_time'] = forms.IntegerField(required=False, min_value=600, max_value=86400, initial=3600)
         
     def clean_main_filename(self):
         main_filename = self.cleaned_data['main_filename']
         if main_filename not in self.file_names:
             raise forms.ValidationError("Given main_filename not in uploaded files.")
         return main_filename
+    
+    def get_subfiles(self):
+        return simplejson.loads(self.cleaned_data['subfiles'])
+    
+    def clean_subfiles(self):
+        try:
+            subfiles = self.get_subfiles()
+        except simplejson.JSONDecodeError:
+            raise forms.ValidationError("Invalid subfiles json")
+
+        if not isinstance(subfiles, dict) or not \
+                all(isinstance(k, basestring) and isinstance(v, basestring)
+                    for k,v in subfiles.iteritems()):
+            raise forms.ValidationError("Invalid subfiles dictionary")
+        
+        return self.cleaned_data['subfiles']
+
+    def clean(self):
+        cleaned_data = super(APIUpload, self).clean()
+        
+        subfiles = cleaned_data.get('subfiles')
+        ephemeral = cleaned_data.get('ephemeral')
+        ttl_time = cleaned_data.get('ttl_time')
+        
+        if ephemeral and not subfiles:
+            raise forms.ValidationError("Ephemeral files must specify subfiles")
+        if not ephemeral and ttl_time:
+            raise forms.ValidationError("TTL time is only valid when uploading ephemeral files")
+        if not ephemeral and subfiles:
+            raise forms.ValidationError("Subfiles parameter is only valid when uploading ephemeral files")
+        
+        if ephemeral and len(self.file_names) > 1:
+            raise forms.ValidationError("Only one file can be uploaded when uploading an ephemeral file")
+        
+        return self.cleaned_data
 
 @csrf_exempt
 def api_upload(request):
@@ -414,11 +451,12 @@ def api_upload(request):
             result['success'] = False
             result['error'] = 'OAuth Authentication Error'
         else:
-            upload_data = {'path': oauth_request.get('path'),
-                           'main_filename': oauth_request.get('main_filename'),
-                           'title': oauth_request.get('title'),
-                           'description': oauth_request.get('description'),
-                           'labels': oauth_request.get('labels')}
+            params = ['path', 'main_filename', 'title',
+                      'description', 'subfiles', 'ephemeral',
+                      'ttl_time', 'labels']
+            
+            upload_data = dict((param, oauth_request.get(param))
+                               for param in params)
 
             form = APIUpload(data=upload_data,
                              files=request.FILES,
@@ -441,6 +479,9 @@ def api_upload(request):
                 labels = form.cleaned_data['labels'].split(',')
                 labels = [label.strip() for label in labels]
                 main_filename = form.cleaned_data['main_filename']
+                ephemeral = form.cleaned_data['ephemeral']
+                ttl_time = form.cleaned_data['ttl_time']
+                subfiles = form.get_subfiles()
     
                 main_rowkey = request.FILES[main_filename].row_key
                 subfiles = {}
@@ -449,7 +490,10 @@ def api_upload(request):
                         subfiles[fname] = fobj.row_key
                 dae_choice = ""
                 filename = main_filename
-    
+
+                if ephemeral:
+                    raise NotImplementedException("ephemeral")
+
                 task = place_upload.delay(main_rowkey, subfiles, title, path, description, run_subtasks=True, create_index=True)
     
                 save_upload_task(username=username,
