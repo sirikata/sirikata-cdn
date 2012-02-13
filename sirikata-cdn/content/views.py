@@ -20,7 +20,7 @@ from users.middleware import save_upload_task, get_pending_upload, \
 
 from content.utils import get_file_metadata, get_hash, get_content_by_date
 from content.utils import add_base_metadata, delete_file_metadata
-from content.utils import get_versions, copy_file
+from content.utils import get_versions, copy_file, update_ttl
 from content.utils import user_search, get_content_by_name
 
 from celery_tasks.import_upload import import_upload, place_upload
@@ -28,6 +28,10 @@ from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
 
 from celery.execute import send_task
 from celery.result import AsyncResult
+
+MIN_TTL = 60
+MAX_TTL = 86400
+INITIAL_TTL = 3600
 
 def json_handler(obj):
     if hasattr(obj, 'isoformat'):
@@ -232,10 +236,11 @@ def upload_processing(request, task_id='', action=False):
         elif res.state == 'SUCCESS':
             path = res.result
             json_result['path'] = path
-            try:
-                save_file_upload(username, path)
-            except:
-                return HttpResponseServerError("There was an error saving your upload.")
+            if not upload_rec['ephemeral']:
+                try:
+                    save_file_upload(username, path)
+                except:
+                    return HttpResponseServerError("There was an error saving your upload.")
             try:
                 remove_pending_upload(username, task_id)
             except:
@@ -340,7 +345,7 @@ def upload_import(request, task_id):
     try:
         upload_rec = get_pending_upload(request.session['username'], task_id)
     except:
-        return HttpResponseForbidden()
+        return HttpResponseNotFound()
 
     res = AsyncResult(task_id)
     if res.state != "SUCCESS":
@@ -392,10 +397,10 @@ class APIUpload(UploadImport, UploadForm):
     def __init__(self, *args, **kwargs):
         super(APIUpload, self).__init__(*args, **kwargs)
         self.fields['main_filename'] = forms.CharField(required=True, min_length=1, max_length=100)
-        self.fields['subfiles'] = forms.CharField(required=False, min_length=1, max_length=10000)
+        self.fields['subfiles'] = forms.CharField(required=False, min_length=1, max_length=10000, initial=None)
         self.fields['ephemeral'] = forms.BooleanField(required=False, initial=False)
         # minimum 10 minutes, maximum 24 hours, default 1 hour
-        self.fields['ttl_time'] = forms.IntegerField(required=False, min_value=600, max_value=86400, initial=3600)
+        self.fields['ttl_time'] = forms.IntegerField(required=False, min_value=MIN_TTL, max_value=MAX_TTL, initial=INITIAL_TTL)
         
     def clean_main_filename(self):
         main_filename = self.cleaned_data['main_filename']
@@ -404,11 +409,13 @@ class APIUpload(UploadImport, UploadForm):
         return main_filename
     
     def get_subfiles(self):
-        return simplejson.loads(self.cleaned_data['subfiles'])
+        return simplejson.loads(self.cleaned_data['subfiles']) if len(self.cleaned_data['subfiles']) > 0 else ''
     
     def clean_subfiles(self):
         try:
             subfiles = self.get_subfiles()
+            if len(subfiles) == 0:
+                return ''
         except simplejson.JSONDecodeError:
             raise forms.ValidationError("Invalid subfiles json")
 
@@ -481,7 +488,7 @@ def api_upload(request):
                 main_filename = form.cleaned_data['main_filename']
                 ephemeral = form.cleaned_data['ephemeral']
                 ttl_time = form.cleaned_data['ttl_time']
-                subfiles = form.get_subfiles()
+                ephemeral_subfiles = form.get_subfiles()
     
                 main_rowkey = request.FILES[main_filename].row_key
                 subfiles = {}
@@ -492,9 +499,11 @@ def api_upload(request):
                 filename = main_filename
 
                 if ephemeral:
-                    raise NotImplementedException("ephemeral")
-
-                task = place_upload.delay(main_rowkey, subfiles, title, path, description, run_subtasks=True, create_index=True)
+                    task = place_upload.delay(main_rowkey, ephemeral_subfiles, title, path,
+                                              description, create_index=False, ephemeral_ttl=ttl_time)
+                else:
+                    task = place_upload.delay(main_rowkey, subfiles, title, path,
+                                              description, create_index=True)
     
                 save_upload_task(username=username,
                                  task_id=task.task_id,
@@ -502,7 +511,8 @@ def api_upload(request):
                                  filename=filename,
                                  subfiles=subfiles,
                                  dae_choice="",
-                                 task_name="place_upload")
+                                 task_name="place_upload",
+                                 ephemeral=ephemeral)
                 
                 result['success'] = True
                 result['task_id'] = task.task_id
@@ -694,6 +704,26 @@ def view_json(request, filename):
     response = HttpResponse(simplejson.dumps(view_params, default=json_handler, indent=4), mimetype='application/json')
     response['Access-Control-Allow-Origin'] = '*'
     return response
+
+def ephemeral_keepalive(request, filename):
+    oauth_request = oauth_server.request_from_django(request)
+    verified = oauth_server.verify_access_request(oauth_request)
+    if not verified:
+        return HttpResponseBadRequest()
+    
+    # make sure file being updated matches the username in the oauth request 
+    filename = '/' + filename
+    username = request.GET.get('username')
+    if not filename.startswith('/' + username):
+        return HttpResponseBadRequest()
+    
+    ttl_time = int(request.GET.get('ttl', INITIAL_TTL))
+    if ttl_time < MIN_TTL or ttl_time > MAX_TTL:
+        return HttpResponseBadRequest()
+    
+    update_ttl(filename, ttl_time)
+    
+    return HttpResponse("")
 
 def search(request):
     query = request.GET.get('q', '')

@@ -16,10 +16,10 @@ BASE_OPEN3DHUB = 'http://localhost:8000'
 UPLOAD_URL = BASE_OPEN3DHUB + '/api/upload'
 UPLOAD_STATUS_URL = BASE_OPEN3DHUB + '/upload/processing/%TASK_ID%?api&username=%USERNAME%'
 
-CONSUMER_KEY = 'efgPOA8pZ3mLNNcPMzPRPwQH6zzENcOiC6bd4iklWzQ='
-CONSUMER_SECRET = 'xbY2_AuwURK5pCpIU9XB6nROMofDv_O-gPdhaRsT2Mk='
-ACCESS_KEY = 'IJnw5e6pxkcI-Upa3RDANjL5HUcrc10BICM7eiRh-XA='
-ACCESS_SECRET = 'xCf-CtG99snn2-e1YrZHD0OR4nEW6WHjStGpU-MQKLQ='
+CONSUMER_KEY = 'lVk5aGvdzZpVP4oh34gE80qB6KW67LfJaBQBD9BB2ec='
+CONSUMER_SECRET = 'ozOvBjola-tHytqR2bpsZOskyIGGy53_MOqKrRvKQIA='
+ACCESS_KEY = 'xzLvHwiPw29qjVCiy2PtZtLgN4md99ocMm8RRVJ0Zv8='
+ACCESS_SECRET = 'O4hH8KDZSoTjCoHeeRtGgMUcau8M6kxtrVbJ8cM5FVY='
 USERNAME = 'jterrace'
 
 # Register the poster module's streaming http handlers with urllib2

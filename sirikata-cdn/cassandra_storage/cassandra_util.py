@@ -50,16 +50,19 @@ def getRecord(cf, rowkey, columns=None):
         raise UnavailableError('Record %s was unavailable' % (rowkey,))
     
 def multiGetRecord(cf, keys, columns=None):
+    if len(keys) == 0:
+        return {}
+    
     try:
         return cf.multiget(keys, columns=columns)
     except NotFoundException:
-        raise NotFoundError('Record %s not found' % (rowkey,))
+        raise NotFoundError('Multiget %d records not found' % (len(keys),))
     except InvalidRequestException:
-        raise InvalidRequestError('Invalid request for record %s' % (rowkey))
+        raise InvalidRequestError('Multigetting %d records invalid request' % (len(keys)))
     except TimedOutException:
-        raise TimedOutError('Request for record %s timed out' % (rowkey,))
+        raise TimedOutError('Request for %d multigets timed out' % (len(keys),))
     except UnavailableException:
-        raise UnavailableError('Record %s was unavailable' % (rowkey,))
+        raise UnavailableError('Record for %d multigets unavailable' % (len(keys),))
 
 def getColRange(cf, rowkey, column_start, column_finish, include_timestamp=False,
                 column_reversed=False, column_count=100):

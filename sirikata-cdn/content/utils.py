@@ -155,6 +155,41 @@ def get_file_metadata(filename):
     version_data['type'] = rec['type']
     return version_data
 
+def update_ttl(filename, ttl):
+    split = filename.split("/")
+
+    version = split[-1:][0]
+    file_key = "/".join(split[:-1])
+
+    rec = getRecord(NAMES, file_key, columns=[version])
+    insertRecord(NAMES, file_key, columns={version: rec[version]}, ttl=ttl)
+
+def get_multi_file_metadata(filenames):
+    keys = []
+    for filename in filenames:
+        split = filename.split("/")
+        version = split[-1:][0]
+        file_key = "/".join(split[:-1])
+        keys.append(file_key)
+    
+    keys = set(keys)
+    
+    recs = multiGetRecord(NAMES, keys)
+    
+    all_metadata = {}
+    for filename in filenames:
+        split = filename.split("/")
+        version = split[-1:][0]
+        file_key = "/".join(split[:-1])
+        
+        if file_key not in recs or version not in recs[file_key]:
+            raise NotFoundError("Specified file not found")
+        
+        all_metadata[filename] = json.loads(recs[file_key][version])
+        all_metadata[filename]['type'] = recs[file_key]['type']
+        
+    return all_metadata
+
 def get_hash(hash):
     try:
         rec = getRecord(FILES, hash, columns=['data', 'mimetype'])
@@ -162,6 +197,9 @@ def get_hash(hash):
         raise
 
     return rec
+
+def multi_get_hash(hashes):
+    return multiGetRecord(FILES, hashes, columns=['data', 'mimetype'])
 
 def delete_hash(hash):
     removeRecord(FILES, hash)
@@ -193,7 +231,7 @@ def save_file_name(path, version_num, hash_key, length):
     col_val = json.dumps(dict)
     insertRecord(NAMES, path, columns={version_num: col_val})
 
-def save_version_type(path, version_num, hash_key, length, subfile_names, zip_key, type_id, title=None, description=None, create_index=True):
+def save_version_type(path, version_num, hash_key, length, subfile_names, zip_key, type_id, title=None, description=None, create_index=True, ttl=None):
     try:
         rec = getRecord(NAMES, path, columns=[version_num])
         version_dict = json.loads(rec[version_num])
@@ -218,7 +256,7 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, zip_ke
                                       'subfiles': subfile_names,
                                       'zip': zip_key}
 
-    insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
+    insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)}, ttl=ttl)
 
     if create_index:
         try:

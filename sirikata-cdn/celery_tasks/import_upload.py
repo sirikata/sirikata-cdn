@@ -3,6 +3,7 @@ from celery.task import task
 from celery.execute import send_task
 import cassandra_storage.cassandra_util as cass
 from content.utils import save_file_data, save_version_type
+from content.utils import get_multi_file_metadata, multi_get_hash
 from content.utils import get_new_version_from_path, save_file_name
 from StringIO import StringIO
 import Image
@@ -102,7 +103,7 @@ def find_in_zip(filepath, zip):
     else:
         return None
 
-def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles):
+def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles, subfile_getter=None):
     try:
         col = coll.Collada(StringIO(dae_data))
     except coll.DaeError as err:
@@ -116,7 +117,7 @@ def get_collada_and_images(zip, dae_zip_name, dae_data, subfiles):
         base_name = posixpath.basename(img.path)
         
         if base_name in subfiles:
-            img_data = get_temp_file(subfiles[base_name])
+            img_data = subfile_getter(base_name) if subfile_getter else get_temp_file(subfiles[base_name])
             subfile_data[base_name] = img_data
         elif dae_zip_name is not None:
             dae_prefix = posixpath.split(dae_zip_name)[0]
@@ -192,55 +193,66 @@ def import_upload(main_rowkey, subfiles, selected_dae=None):
     return dae_zip_name
 
 @task
-def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None, run_subtasks=True, create_index=True):
+def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None, create_index=True, ephemeral_ttl=None):
     import_upload.update_state(state="LOADING")
     file_data = get_temp_file(main_rowkey)
     (zip, dae_zip_name, dae_data) = get_file_or_zip(file_data, selected_dae)
     
-    import_upload.update_state(state="CHECKING_COLLADA")
-    (collada_obj, subfile_data, image_objs) = get_collada_and_images(zip, dae_zip_name, dae_data, subfiles)
+    if ephemeral_ttl is not None:
+        eph_subfile_metadata = get_multi_file_metadata(subfiles.values())
+        eph_subfile_hashes = [m['hash'] for m in eph_subfile_metadata.itervalues()]
+        eph_subfile_data = multi_get_hash(eph_subfile_hashes)
+        def eph_subfile_getter(name):
+            return eph_subfile_data[eph_subfile_metadata[subfiles[name]]['hash']]['data']
+        (collada_obj, subfile_data, image_objs) = get_collada_and_images(zip, dae_zip_name, dae_data, subfiles, subfile_getter=eph_subfile_getter)
+    else:
+        import_upload.update_state(state="CHECKING_COLLADA")
+        (collada_obj, subfile_data, image_objs) = get_collada_and_images(zip, dae_zip_name, dae_data, subfiles)
 
     import_upload.update_state(state="SAVING_ORIGINAL")
     try: new_version_num = get_new_version_from_path(path, file_type="collada")
     except cass.DatabaseError: raise DatabaseError()
     
-    #Make sure image paths are just the base name
-    current_prefix = "original"
-    subfile_names = []
-    image_names = []
-    for img in collada_obj.images:
-        rel_path = img.path
-        base_name = posixpath.basename(img.path)
-        orig_base_name = base_name
-        
-        #strip out any character not allowed
-        base_name = re.sub('[^\w\-\.]', '', base_name)
-        
-        #make sure that referenced texture files are unique
-        while base_name in image_names:
-            dot = base_name.rfind('.')
-            ext = base_name[dot:] if dot != -1 else ''
-            before_ext = base_name[0:dot] if dot != -1 else base_name
-            base_name = "%s-x%s" % (before_ext, ext)
+    if ephemeral_ttl is not None:
+        subfile_names = subfiles.values()
+    else:
+        #Make sure image paths are just the base name
+        current_prefix = "original"
+        subfile_names = []
+        image_names = []
+        for img in collada_obj.images:
+            rel_path = img.path
+            base_name = posixpath.basename(img.path)
+            orig_base_name = base_name
             
-        if base_name != orig_base_name:
-            subfile_data[base_name] = subfile_data[orig_base_name]
-            del subfile_data[orig_base_name]
-            image_objs[base_name] = image_objs[orig_base_name]
-            del image_objs[orig_base_name]
-        
-        img.path = "./%s" % base_name
-        img.save()
-        img_hex_key = hashlib.sha256(subfile_data[base_name]).hexdigest()
-        try: save_file_data(img_hex_key, subfile_data[base_name], "image/%s" % image_objs[base_name].format.lower())
-        except: raise DatabaseError()
-        img_path = "%s/%s/%s" % (path, current_prefix, base_name)
-        img_len = len(subfile_data[base_name])
-        try: img_version_num = get_new_version_from_path(img_path, file_type="image")
-        except cass.DatabaseError: raise DatabaseError()
-        try: save_file_name(img_path, img_version_num, img_hex_key, img_len)
-        except cass.DatabaseError: raise DatabaseError()
-        subfile_names.append("%s/%s" % (img_path, img_version_num))
+            #strip out any character not allowed
+            base_name = re.sub('[^\w\-\.]', '', base_name)
+            
+            #make sure that referenced texture files are unique
+            while base_name in image_names:
+                dot = base_name.rfind('.')
+                ext = base_name[dot:] if dot != -1 else ''
+                before_ext = base_name[0:dot] if dot != -1 else base_name
+                base_name = "%s-x%s" % (before_ext, ext)
+                
+            if base_name != orig_base_name:
+                subfile_data[base_name] = subfile_data[orig_base_name]
+                del subfile_data[orig_base_name]
+                image_objs[base_name] = image_objs[orig_base_name]
+                del image_objs[orig_base_name]
+            
+            img.path = "./%s" % base_name
+            img.save()
+            img_hex_key = hashlib.sha256(subfile_data[base_name]).hexdigest()
+            try: save_file_data(img_hex_key, subfile_data[base_name], "image/%s" % image_objs[base_name].format.lower())
+            except: raise DatabaseError()
+            img_path = "%s/%s/%s" % (path, current_prefix, base_name)
+            img_len = len(subfile_data[base_name])
+            try: img_version_num = get_new_version_from_path(img_path, file_type="image")
+            except cass.DatabaseError: raise DatabaseError()
+            try: save_file_name(img_path, img_version_num, img_hex_key, img_len)
+            except cass.DatabaseError: raise DatabaseError()
+            subfile_names.append("%s/%s" % (img_path, img_version_num))
 
     str_buffer = StringIO()
     collada_obj.write(str_buffer)
@@ -264,15 +276,15 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     try:
         save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),
                           subfile_names, zip_hex_key, "original", title,
-                          description, create_index=create_index)
+                          description, create_index=create_index, ttl=ephemeral_ttl)
     except cass.DatabaseError:
         raise DatabaseError()
 
     path_with_vers = "%s/%s" % (path, new_version_num)
-
-    if run_subtasks:
-        send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[path_with_vers, "original"])
+    
+    if ephemeral_ttl is None:
         send_task("celery_tasks.generate_metadata.generate_metadata", args=[path_with_vers, "original"])
+        send_task("celery_tasks.generate_screenshot.generate_screenshot", args=[path_with_vers, "original"])
         send_task("celery_tasks.generate_optimized.generate_optimized", args=[path_with_vers, "original"])
         #FIXME: not autorunning this now because it takes too long and is error-prone
         #send_task("celery_tasks.generate_progressive.generate_progressive", args=[path_with_vers, "original"])
