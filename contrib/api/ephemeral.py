@@ -123,6 +123,8 @@ def main():
     print
     if result.get('state') == 'SUCCESS':
         print "New upload has path: '%s'" % (result.get('path'))
+    else:
+        sys.exit(1)
         
     uploaded_path = result.get('path')
     json_info_url = API_MODELINFO_URL % {'path': uploaded_path}
