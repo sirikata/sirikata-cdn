@@ -424,7 +424,9 @@ class APIUpload(UploadImport, UploadForm):
                     for k,v in subfiles.iteritems()):
             raise forms.ValidationError("Invalid subfiles dictionary")
         
-        return self.cleaned_data['subfiles']
+        subfiles = dict((posixpath.normpath(k), v) for k,v in subfiles.iteritems())
+        
+        return simplejson.dumps(subfiles)
 
     def clean(self):
         cleaned_data = super(APIUpload, self).clean()
