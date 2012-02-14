@@ -22,6 +22,7 @@ from content.utils import get_file_metadata, get_hash, get_content_by_date
 from content.utils import add_base_metadata, delete_file_metadata
 from content.utils import get_versions, copy_file, update_ttl
 from content.utils import user_search, get_content_by_name
+from content.utils import PathInfo
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
@@ -846,6 +847,14 @@ def dns(request, filename):
             response['Num-Triangles'] = extra_metadata['num_triangles']
         if 'zernike' in extra_metadata:
             response['Zernike']  = ','.join(map(str, extra_metadata['zernike']))
+
+    if 'subfiles' in file_metadata['types'][type_id]:
+        subfiles = file_metadata['types'][type_id]['subfiles']
+        response['Subfiles'] = len(subfiles)
+        for subfile_number, subfile_path in enumerate(subfiles):
+            pathinfo = PathInfo(subfile_path)
+            response['Subfile-%d-Name' % subfile_number] = pathinfo.basename
+            response['Subfile-%d-Path' % subfile_number] = pathinfo.normpath
 
     if 'mipmaps' in file_metadata['types'][type_id]:
         mipmaps = file_metadata['types'][type_id]['mipmaps']
