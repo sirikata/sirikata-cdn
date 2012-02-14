@@ -670,7 +670,7 @@ def view(request, filename):
     view_params['basename'] = basename
     view_params['basepath'] = basepath
     view_params['fullpath'] = filename
-    view_params['all_versions'] = versions
+    view_params['all_versions'] = map(str, sorted(map(int, versions)))
     view_params['latest_version'] = latest_version
     file_username = split[0]
 
