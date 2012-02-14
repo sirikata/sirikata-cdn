@@ -409,7 +409,7 @@ class APIUpload(UploadImport, UploadForm):
         return main_filename
     
     def get_subfiles(self):
-        return simplejson.loads(self.cleaned_data['subfiles']) if len(self.cleaned_data['subfiles']) > 0 else ''
+        return simplejson.loads(self.cleaned_data['subfiles']) if len(self.cleaned_data['subfiles']) > 0 else {}
     
     def clean_subfiles(self):
         try:
@@ -433,8 +433,6 @@ class APIUpload(UploadImport, UploadForm):
         ephemeral = cleaned_data.get('ephemeral')
         ttl_time = cleaned_data.get('ttl_time')
         
-        if ephemeral and not subfiles:
-            raise forms.ValidationError("Ephemeral files must specify subfiles")
         if not ephemeral and ttl_time:
             raise forms.ValidationError("TTL time is only valid when uploading ephemeral files")
         if not ephemeral and subfiles:
