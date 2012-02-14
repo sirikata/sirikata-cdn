@@ -13,6 +13,36 @@ NAMES = getColumnFamily('Names')
 FILES = getColumnFamily('Files')
 NAMESBYTIME = getColumnFamily('NameTimestampIndex')
 
+class PathInfo(object):
+    """Helper class for dealing with CDN paths"""
+    def __init__(self, filename):
+        self.filename = filename
+        self.normpath = posixpath.normpath(filename)
+        """Normalized original path"""
+        
+        split = self.normpath.split("/")
+        try:
+            self.version = str(int(split[-1]))
+            """Version number of the path"""
+        except ValueError:
+            self.version = None
+    
+        if self.version is None:
+            self.basename = split[-1]
+            """The filename of the path"""
+            self.basepath = self.normpath
+            """The base of the path, without the version number"""
+        else:
+            self.basename = split[-2]
+            self.basepath = '/'.join(split[:-1])
+            
+    def __str__(self):
+        return "<PathInfo filename='%s', normpath='%s', basepath='%s', basename='%s', version='%s'>" % \
+                (self.filename, self.normpath, self.basepath, self.basename, self.version)
+    
+    def __repr__(self):
+        return str(self)
+
 def get_model_data_from_path(path):
     version_num = path.split("/")[-1]
     base_path = "/".join(path.split("/")[:-1])
@@ -167,26 +197,23 @@ def update_ttl(filename, ttl):
 def get_multi_file_metadata(filenames):
     keys = []
     for filename in filenames:
-        split = filename.split("/")
-        version = split[-1:][0]
-        file_key = "/".join(split[:-1])
-        keys.append(file_key)
+        pathinfo = PathInfo(filename)
+        keys.append(pathinfo.basepath)
     
     keys = set(keys)
-    
     recs = multiGetRecord(NAMES, keys)
     
     all_metadata = {}
     for filename in filenames:
-        split = filename.split("/")
-        version = split[-1:][0]
-        file_key = "/".join(split[:-1])
+        pathinfo = PathInfo(filename)
+        if pathinfo.version is None:
+            pathinfo.version = recs[pathinfo.basepath]['latest']
         
-        if file_key not in recs or version not in recs[file_key]:
+        if pathinfo.basepath not in recs or pathinfo.version not in recs[pathinfo.basepath]:
             raise NotFoundError("Specified file not found")
         
-        all_metadata[filename] = json.loads(recs[file_key][version])
-        all_metadata[filename]['type'] = recs[file_key]['type']
+        all_metadata[filename] = json.loads(recs[pathinfo.basepath][pathinfo.version])
+        all_metadata[filename]['type'] = recs[pathinfo.basepath]['type']
         
     return all_metadata
 
