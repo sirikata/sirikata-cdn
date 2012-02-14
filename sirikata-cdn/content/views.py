@@ -451,7 +451,7 @@ def api_upload(request):
         result['error'] = 'Invalid request'
     else:
         oauth_request = oauth_server.request_from_django(request)
-        verified = oauth_server.verify_access_request(oauth_request)
+        verified = oauth_server.verify_access_request(oauth_request) if oauth_request else False
         if not verified:
             result['success'] = False
             result['error'] = 'OAuth Authentication Error'
@@ -705,7 +705,7 @@ def view_json(request, filename):
 
 def ephemeral_keepalive(request, filename):
     oauth_request = oauth_server.request_from_django(request)
-    verified = oauth_server.verify_access_request(oauth_request)
+    verified = oauth_server.verify_access_request(oauth_request) if oauth_request else False
     if not verified:
         return HttpResponseBadRequest()
     
@@ -784,7 +784,7 @@ def dns(request, filename):
     if request.method != 'HEAD' and request.method != 'GET':
         return HttpResponseBadRequest()
 
-    parts = filename.split("/")
+    parts = posixpath.normpath(filename).split("/")
     if len(parts) < 3:
         return HttpResponseBadRequest()
     
