@@ -33,6 +33,16 @@ def detect_progressive(type, metadata):
         return True
     return False
 
+def detect_panda3d(type, metadata):
+    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+        return False
+    if 'progressive' not in metadata['types']:
+        return False
+    if 'panda3d_base_bam' in metadata['types']['progressive'] and \
+       'panda3d_full_bam' in metadata['types']['progressive']:
+        return True
+    return False
+
 tasks = {'screenshot' :
             {'task_name': 'celery_tasks.generate_screenshot.generate_screenshot',
              'detect_func': detect_screenshot},
@@ -44,7 +54,10 @@ tasks = {'screenshot' :
              'detect_func': detect_metadata},
          'generate_progressive' :
             {'task_name': 'celery_tasks.generate_progressive.generate_progressive',
-             'detect_func': detect_progressive}}
+             'detect_func': detect_progressive},
+         'generate_panda3d' :
+            {'task_name': 'celery_tasks.generate_panda3d.generate_panda3d',
+             'detect_func': detect_panda3d}}
 
 running_tasks = []
 NUM_CONCURRENT_TASKS = None

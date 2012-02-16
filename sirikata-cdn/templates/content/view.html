@@ -6,7 +6,7 @@
 {{ block.super }}
 <script type="text/javascript">
     $(document).ready(function() {
-    	$( "#title_accordion" ).accordion();
+        $( "#title_accordion" ).accordion();
         $("#type_tabs").tabs();
         $( "#delete-dialog-confirm" ).dialog({
             resizable: false,
@@ -14,12 +14,12 @@
             height:140,
             modal: true,
             buttons: {
-	            "Delete": function() {
-	                window.location = $( "a#delete_button ").attr('href');
-	            },
-	            "Cancel": function() {
-	                $(this).dialog("close");
-	            }
+                "Delete": function() {
+                    window.location = $( "a#delete_button ").attr('href');
+                },
+                "Cancel": function() {
+                    $(this).dialog("close");
+                }
             }
         });
         $( "a#delete_button ").click(function() {
@@ -53,12 +53,12 @@
         <br>
         <p>
             {% if can_change %}
-	        <a class="button" href="{% url content.views.edit_file fullpath %}">Edit</a>
-	        <a id='delete_button' class="button" href="{% url content.views.delete_file fullpath %}">Delete</a>
-	        {% endif %}
-	        {% if can_clone %}
-	        <a class="button" href="{% url content.views.clone_file fullpath %}">Clone</a>
-	        {% endif %}
+            <a class="button" href="{% url content.views.edit_file fullpath %}">Edit</a>
+            <a id='delete_button' class="button" href="{% url content.views.delete_file fullpath %}">Delete</a>
+            {% endif %}
+            {% if can_clone %}
+            <a class="button" href="{% url content.views.clone_file fullpath %}">Clone</a>
+            {% endif %}
         </p>
     </div>
 </div>
@@ -86,22 +86,22 @@ You can pin sirikata to this latest version: <br/>
         {% endfor %}
     </ul>
     {% for type_name, props in metadata.types.items %}
-	    <div id="{{type_name}}">
-	        <p>
-	            <div class="pagelet">
-	            {% if props.thumbnail and props.screenshot %}
-	            <a href="{% url content.views.download props.screenshot %}">
-	            <img alt="Click for larger version" class="thumbnail" src="{% url content.views.download props.thumbnail %}"/>
-	            </a>
-	            {% endif %}
-	            <table>
-	            <thead><th colspan="2">File Info</th></thead>
-	            {% if props.zip %}
-	            <tr><td class="label">Download Zip</td><td><a href="{% url content.views.download props.zip basename %}.zip">{{ basename }}.zip</a></td></tr>
-	            <tr><td class="label">Zip Hash</td><td>{{ props.zip }}</td></tr>
-	            {% endif %}
-	            <tr><td class="label">Download Mesh</td><td><a href="{% url content.views.download props.hash basename %}">{{ basename }}</a></td></tr>
-	            <tr><td class="label">Mesh Hash</td><td>{{ props.hash }}</td></tr>
+        <div id="{{type_name}}">
+            <p>
+                <div class="pagelet">
+                {% if props.thumbnail and props.screenshot %}
+                <a href="{% url content.views.download props.screenshot %}">
+                <img alt="Click for larger version" class="thumbnail" src="{% url content.views.download props.thumbnail %}"/>
+                </a>
+                {% endif %}
+                <table>
+                <thead><th colspan="2">File Info</th></thead>
+                {% if props.zip %}
+                <tr><td class="label">Download Zip</td><td><a href="{% url content.views.download props.zip basename %}.zip">{{ basename }}.zip</a></td></tr>
+                <tr><td class="label">Zip Hash</td><td>{{ props.zip }}</td></tr>
+                {% endif %}
+                <tr><td class="label">Download Mesh</td><td><a href="{% url content.views.download props.hash basename %}">{{ basename }}</a></td></tr>
+                <tr><td class="label">Mesh Hash</td><td>{{ props.hash }}</td></tr>
                 
                 <tr><td class="label">Triangles</td><td>{{ props.metadata.num_triangles }}</td></tr>
                 <tr><td class="label">Materials</td><td>{{ props.metadata.num_materials }}</td></tr>
@@ -110,16 +110,23 @@ You can pin sirikata to this latest version: <br/>
                 <tr><td class="label">Texture RAM Usage</td><td>{{ props.metadata.texture_ram_usage|filesizeformat }} </td></tr>
                 <tr><td class="label">Draw Calls</td><td>{{ props.metadata.num_draw_calls }}</td></tr>
                 
-	            <tr><td class="label">Mesh Size</td><td>{{ props.size|filesizeformat }}</td></tr>
-	            <tr><td class="label">Sirikata URL</td><td><input class="clip_url" type="text" value="meerkat:///{{ basepath }}/{{ type_name }}/{{ version }}/{{ basename }}"></input></td></tr>
-	            
+                <tr><td class="label">Mesh Size</td><td>{{ props.size|filesizeformat }}</td></tr>
+                <tr><td class="label">Sirikata URL</td><td><input class="clip_url" type="text" value="meerkat:///{{ basepath }}/{{ type_name }}/{{ version }}/{{ basename }}"></input></td></tr>
+                
                 {% if props.metadata.zernike %}
                 <tr><td class="label">Zernike</td><td><input class="clip_url" type="text" value="{{ props.metadata.zernike }}"></input></td></tr>
                 {% endif %}
-	            
-	            {% if props.progressive_stream %}
-	            <tr><td class="label">Progressive Stream</td><td><a href="{% url content.views.download props.progressive_stream basename|add:'.pdae' %}">{{ basename }}.pdae</a></td></tr>
-	            {% endif %}
+                
+                {% if props.panda3d_base_bam %}
+                <tr><td class="label">Panda3D Base Mesh</td><td><a href="{% url content.views.download props.panda3d_base_bam basename|add:'.base.bam' %}">{{ basename }}.base.bam</a></td></tr>
+                {% endif %}
+                {% if props.panda3d_full_bam %}
+                <tr><td class="label">Panda3D Full Mesh</td><td><a href="{% url content.views.download props.panda3d_full_bam basename|add:'.full.bam' %}">{{ basename }}.full.bam</a></td></tr>
+                {% endif %}
+                
+                {% if props.progressive_stream %}
+                <tr><td class="label">Progressive Stream</td><td><a href="{% url content.views.download props.progressive_stream basename|add:'.pdae' %}">{{ basename }}.pdae</a></td></tr>
+                {% endif %}
                 {% if props.progressive_stream_num_triangles or props.progressive_stream_num_triangles == 0 %}
                 <tr><td class="label">Triangles in Progressive Stream</td><td>{{ props.progressive_stream_num_triangles }}</td></tr>
                 {% endif %}
@@ -134,14 +141,14 @@ You can pin sirikata to this latest version: <br/>
                 )</a></td></tr>
                 {% endfor %}
                 {% endif %}
-	            {% for subfile in props.subfiles %}
-	            <tr><td class="label">Subfile {{ forloop.counter }}</td>
-	            <td><a href="{% url content.views.view subfile|slice:"1:" %}">{{ subfile }}</a></td></tr>
-	            {% endfor %}
-	            </table>
-	            </div>
-	        </p>
-	    </div>
+                {% for subfile in props.subfiles %}
+                <tr><td class="label">Subfile {{ forloop.counter }}</td>
+                <td><a href="{% url content.views.view subfile|slice:"1:" %}">{{ subfile }}</a></td></tr>
+                {% endfor %}
+                </table>
+                </div>
+            </p>
+        </div>
     {% endfor %}
 </div>
 

@@ -34,8 +34,10 @@ def get_referenced_keys():
                 value_dict = json.loads(value)
                 for output_type, type_data in value_dict['types'].iteritems():
                     
-                    #all of theys could have a hash in them
-                    hash_keys = ['zip', 'screenshot', 'hash', 'thumbnail', 'progressive_stream']
+                    #all of these could have a hash in them
+                    hash_keys = ['zip', 'screenshot', 'hash', 'thumbnail',
+                                 'progressive_stream', 'panda3d_base_bam',
+                                 'panda3d_full_bam']
                     for hash_key in hash_keys:
                         hash_key_val = type_data.get(hash_key)
                         if hash_key_val is not None:
