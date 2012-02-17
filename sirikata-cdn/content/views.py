@@ -60,7 +60,7 @@ def browse(request):
     }
     return render_to_response('content/browse.html', view_params, context_instance = RequestContext(request))
 
-
+@decorator_from_middleware(GZipMiddleware)
 def browse_json(request, start=""):
     (content_items, older_start, newer_start) = get_content_by_date(start=start)
     view_params = {'content_items': content_items, 'next_start': older_start, 'previous_start': newer_start}
@@ -691,6 +691,7 @@ def view(request, filename):
         html_page = 'content/view.html'
     return render_to_response(html_page, view_params, context_instance = RequestContext(request))
 
+@decorator_from_middleware(GZipMiddleware)
 def view_json(request, filename):
     try: file_metadata = get_file_metadata("/%s" % filename)
     except NotFoundError: return HttpResponseNotFound()
