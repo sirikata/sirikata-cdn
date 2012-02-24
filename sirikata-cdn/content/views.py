@@ -792,6 +792,13 @@ def dns(request, filename):
     if len(parts) < 3:
         return HttpResponseBadRequest()
     
+    # if version number is the last element (CDN format instead of meerkat format), swap it
+    try:
+        version_num = int(parts[-1])
+        parts[-2], parts[-1] = parts[-1], parts[-2]
+    except ValueError:
+        pass
+    
     requested_file = parts[-1]
 
     try: version_num = str(int(parts[-2]))
@@ -814,9 +821,11 @@ def dns(request, filename):
         return HttpResponseNotFound()
 
     if requested_file == posixpath.basename(base_path):
+        is_mesh = True
         hash = file_metadata['types'][type_id]['hash']
         file_size = file_metadata['types'][type_id]['size']
     else:
+        is_mesh = False
         subfile_map = {}
         for subfile in file_metadata['types'][type_id]['subfiles']:
             (subfile_base, vers) = posixpath.split(subfile)
@@ -837,19 +846,19 @@ def dns(request, filename):
     else:
         response = HttpResponse()
         
-    if 'progressive_stream' in file_metadata['types'][type_id] and file_metadata['types'][type_id]['progressive_stream'] is not None:
+    if is_mesh and 'progressive_stream' in file_metadata['types'][type_id] and file_metadata['types'][type_id]['progressive_stream'] is not None:
         response['Progresive-Stream'] = file_metadata['types'][type_id]['progressive_stream']
-    if 'progressive_stream_num_triangles' in file_metadata['types'][type_id]:
+    if is_mesh and 'progressive_stream_num_triangles' in file_metadata['types'][type_id]:
         response['Progresive-Stream-Num-Triangles'] = file_metadata['types'][type_id]['progressive_stream_num_triangles']
 
-    if 'metadata' in file_metadata['types'][type_id]:
+    if is_mesh and 'metadata' in file_metadata['types'][type_id]:
         extra_metadata = file_metadata['types'][type_id]['metadata']
         if 'num_triangles' in extra_metadata:
             response['Num-Triangles'] = extra_metadata['num_triangles']
         if 'zernike' in extra_metadata:
             response['Zernike']  = ','.join(map(str, extra_metadata['zernike']))
 
-    if 'subfiles' in file_metadata['types'][type_id]:
+    if is_mesh and 'subfiles' in file_metadata['types'][type_id]:
         subfiles = file_metadata['types'][type_id]['subfiles']
         response['Subfiles'] = len(subfiles)
         for subfile_number, subfile_path in enumerate(subfiles):
@@ -857,7 +866,7 @@ def dns(request, filename):
             response['Subfile-%d-Name' % subfile_number] = pathinfo.basename
             response['Subfile-%d-Path' % subfile_number] = pathinfo.normpath
 
-    if 'mipmaps' in file_metadata['types'][type_id]:
+    if is_mesh and 'mipmaps' in file_metadata['types'][type_id]:
         mipmaps = file_metadata['types'][type_id]['mipmaps']
         response['Mipmaps'] = len(mipmaps)
         for mipmap_number, (mipmap_name, mipmap_data) in enumerate(mipmaps.iteritems()):
