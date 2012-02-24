@@ -788,56 +788,64 @@ def dns(request, filename):
     if request.method != 'HEAD' and request.method != 'GET':
         return HttpResponseBadRequest()
 
-    parts = posixpath.normpath(filename).split("/")
-    if len(parts) < 3:
-        return HttpResponseBadRequest()
-    
-    # if version number is the last element (CDN format instead of meerkat format), swap it
+    #check if filename exists as-is, otherwise try meerkat URI
     try:
-        version_num = int(parts[-1])
-        parts[-2], parts[-1] = parts[-1], parts[-2]
-    except ValueError:
-        pass
-    
-    requested_file = parts[-1]
-
-    try: version_num = str(int(parts[-2]))
-    except ValueError: version_num = None
-    
-    if version_num is None:
-        base_path = "/".join(parts[:-2])
-        type_id = parts[-2]
-        versions = get_versions('/' + base_path)
-        version_num = str(max(map(int, versions)))
-    else:
-        base_path = "/".join(parts[:-3])
-        type_id = parts[-3]
-
-    try: file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
-    except NotFoundError: return HttpResponseNotFound()
-    except: return HttpResponseServerError()
-
-    if type_id not in file_metadata['types']:
-        return HttpResponseNotFound()
-
-    if requested_file == posixpath.basename(base_path):
-        is_mesh = True
-        hash = file_metadata['types'][type_id]['hash']
-        file_size = file_metadata['types'][type_id]['size']
-    else:
+        file_metadata = get_file_metadata("/" + filename)
+        pathinfo = PathInfo(filename)
+        requested_file = pathinfo.basename
+        version_num = pathinfo.version
+        base_path = pathinfo.basepath
+        hash = file_metadata['hash']
+        file_size = file_metadata['size']
         is_mesh = False
-        subfile_map = {}
-        for subfile in file_metadata['types'][type_id]['subfiles']:
-            (subfile_base, vers) = posixpath.split(subfile)
-            subfile_basename = posixpath.basename(subfile_base)
-            subfile_map[subfile_basename] = subfile
+        meerkat = False
+    except NotFoundError:
+        meerkat = True
 
-        if requested_file not in subfile_map:
+    if meerkat:
+        parts = posixpath.normpath(filename).split("/")
+        if len(parts) < 3:
+            return HttpResponseBadRequest()
+        
+        requested_file = parts[-1]
+    
+        try: version_num = str(int(parts[-2]))
+        except ValueError: version_num = None
+        
+        if version_num is None:
+            base_path = "/".join(parts[:-2])
+            type_id = parts[-2]
+            versions = get_versions('/' + base_path)
+            version_num = str(max(map(int, versions)))
+        else:
+            base_path = "/".join(parts[:-3])
+            type_id = parts[-3]
+    
+        try: file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
+        except NotFoundError: return HttpResponseNotFound()
+        except: return HttpResponseServerError()
+
+        if type_id not in file_metadata['types']:
             return HttpResponseNotFound()
 
-        subfile_metadata = get_file_metadata(subfile_map[requested_file])
-        hash = subfile_metadata['hash']
-        file_size = subfile_metadata['size']
+        if requested_file == posixpath.basename(base_path):
+            is_mesh = True
+            hash = file_metadata['types'][type_id]['hash']
+            file_size = file_metadata['types'][type_id]['size']
+        else:
+            is_mesh = False
+            subfile_map = {}
+            for subfile in file_metadata['types'][type_id]['subfiles']:
+                (subfile_base, vers) = posixpath.split(subfile)
+                subfile_basename = posixpath.basename(subfile_base)
+                subfile_map[subfile_basename] = subfile
+    
+            if requested_file not in subfile_map:
+                return HttpResponseNotFound()
+    
+            subfile_metadata = get_file_metadata(subfile_map[requested_file])
+            hash = subfile_metadata['hash']
+            file_size = subfile_metadata['size']
     
     if request.method == 'GET':
         body = {'Hash': hash, 'File-Size': file_size}
