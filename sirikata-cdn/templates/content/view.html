@@ -117,6 +117,9 @@ You can pin sirikata to this latest version: <br/>
                 <tr><td class="label">Zernike</td><td><input class="clip_url" type="text" value="{{ props.metadata.zernike }}"></input></td></tr>
                 {% endif %}
                 
+                {% if props.panda3d_bam %}
+                <tr><td class="label">Panda3D Mesh</td><td><a href="{% url content.views.download props.panda3d_bam basename|add:'.bam' %}">{{ basename }}.bam</a></td></tr>
+                {% endif %}
                 {% if props.panda3d_base_bam %}
                 <tr><td class="label">Panda3D Base Mesh</td><td><a href="{% url content.views.download props.panda3d_base_bam basename|add:'.base.bam' %}">{{ basename }}.base.bam</a></td></tr>
                 {% endif %}

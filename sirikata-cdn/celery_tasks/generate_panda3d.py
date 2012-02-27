@@ -63,45 +63,67 @@ def generate_panda3d(filename, typeid):
     metadata = get_file_metadata(filename)
     hash = metadata['types'][typeid]['hash']
     subfiles = metadata['types'][typeid]['subfiles']
-    progressive_stream = metadata['types'][typeid]['progressive_stream']
+    progressive_stream = metadata['types'][typeid].get('progressive_stream')
     progressive_data = get_hash(progressive_stream)['data'] if progressive_stream else None
-    mipmaps = metadata['types'][typeid]['mipmaps']
+    mipmaps = metadata['types'][typeid].get('mipmaps')
     pathinfo = PathInfo(filename)
     dae_data = get_hash(hash)['data']
 
-    mipmap_data = {}
-    for mipmap_name, mipmap_info in mipmaps.iteritems():
-        tar_hash = mipmap_info['hash']
-        tar_data = get_hash(tar_hash)['data']
+    if mipmaps is not None:
+
+        mipmap_data = {}
+        for mipmap_name, mipmap_info in mipmaps.iteritems():
+            tar_hash = mipmap_info['hash']
+            tar_data = get_hash(tar_hash)['data']
+            
+            min_range = None
+            max_range = None
+            min_size = 128
+            for byte_range in mipmap_info['byte_ranges']:
+                if byte_range['width'] <= min_size and byte_range['height'] <= min_size:
+                    min_range = (byte_range['offset'], byte_range['length'])
+                max_range = (byte_range['offset'], byte_range['length'])
+    
+            mipmap_data[mipmap_name] = {}
+            mipmap_data[mipmap_name]['base'] = tar_data[min_range[0]:min_range[0]+min_range[1]]
+            mipmap_data[mipmap_name]['full'] = tar_data[max_range[0]:max_range[0]+max_range[1]]
+    
+        def base_loader(filename):
+            return mipmap_data[filename]['base']
+        def full_loader(filename):
+            return mipmap_data[filename]['full']
+    
+        base_mesh = collada.Collada(StringIO(dae_data), aux_file_loader=base_loader)
+        base_bam_data = getBam(base_mesh, 'base_' + filename)
+        base_bam_hex_key = hashlib.sha256(base_bam_data).hexdigest()
+        save_file_data(base_bam_hex_key, base_bam_data, "model/x-bam")
+    
+        full_mesh = collada.Collada(StringIO(dae_data), aux_file_loader=full_loader)
+        if progressive_data is not None:
+            full_mesh = add_back_pm.add_back_pm(full_mesh, StringIO(progressive_data), 100)
+        full_bam_data = getBam(full_mesh, 'full_' + filename)
+        full_bam_hex_key = hashlib.sha256(full_bam_data).hexdigest()
+        save_file_data(full_bam_hex_key, full_bam_data, "model/x-bam")
+    
+        add_metadata(pathinfo.basepath, pathinfo.version, typeid, {'panda3d_base_bam': base_bam_hex_key,
+                                                                   'panda3d_full_bam': full_bam_hex_key})
+    else:
         
-        min_range = None
-        max_range = None
-        min_size = 128
-        for byte_range in mipmap_info['byte_ranges']:
-            if byte_range['width'] <= min_size and byte_range['height'] <= min_size:
-                min_range = (byte_range['offset'], byte_range['length'])
-            max_range = (byte_range['offset'], byte_range['length'])
-
-        mipmap_data[mipmap_name] = {}
-        mipmap_data[mipmap_name]['base'] = tar_data[min_range[0]:min_range[0]+min_range[1]]
-        mipmap_data[mipmap_name]['full'] = tar_data[max_range[0]:max_range[0]+max_range[1]]
-
-    def base_loader(filename):
-        return mipmap_data[filename]['base']
-    def full_loader(filename):
-        return mipmap_data[filename]['full']
-
-    base_mesh = collada.Collada(StringIO(dae_data), aux_file_loader=base_loader)
-    base_bam_data = getBam(base_mesh, 'base_' + filename)
-    base_bam_hex_key = hashlib.sha256(base_bam_data).hexdigest()
-    save_file_data(base_bam_hex_key, base_bam_data, "model/x-bam")
-
-    full_mesh = collada.Collada(StringIO(dae_data), aux_file_loader=full_loader)
-    if progressive_data is not None:
-        full_mesh = add_back_pm.add_back_pm(full_mesh, StringIO(progressive_data), 100)
-    full_bam_data = getBam(full_mesh, 'full_' + filename)
-    full_bam_hex_key = hashlib.sha256(full_bam_data).hexdigest()
-    save_file_data(full_bam_hex_key, full_bam_data, "model/x-bam")
-
-    add_metadata(pathinfo.basepath, pathinfo.version, typeid, {'panda3d_base_bam': base_bam_hex_key,
-                                                               'panda3d_full_bam': full_bam_hex_key})
+        subfile_map = {}
+        for subfile in subfiles:
+            img_meta = get_file_metadata(subfile)
+            img_hash = img_meta['hash']
+            img_data = get_hash(img_hash)['data']
+            base_name = os.path.basename(os.path.split(subfile)[0])
+            subfile_map[base_name] = img_data
+        
+        def customImageLoader(filename):
+            return subfile_map[posixpath.basename(filename)]
+        
+        mesh = collada.Collada(StringIO(dae_data), aux_file_loader=customImageLoader)
+        other_bam_data = getBam(mesh, typeid + '_' + filename)
+        other_bam_hex_key = hashlib.sha256(other_bam_data).hexdigest()
+        save_file_data(other_bam_hex_key, other_bam_data, "model/x-bam")
+        
+        add_metadata(pathinfo.basepath, pathinfo.version, typeid, {'panda3d_bam': other_bam_hex_key})
+        

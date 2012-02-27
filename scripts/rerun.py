@@ -36,10 +36,11 @@ def detect_progressive(type, metadata):
 def detect_panda3d(type, metadata):
     if metadata is None or 'types' not in metadata or type not in metadata['types']:
         return False
-    if 'progressive' not in metadata['types']:
+    if type not in metadata['types']:
         return False
-    if 'panda3d_base_bam' in metadata['types']['progressive'] and \
-       'panda3d_full_bam' in metadata['types']['progressive']:
+    if 'panda3d_base_bam' in metadata['types'][type] and \
+       'panda3d_full_bam' in metadata['types'][type] or \
+       'panda3d_bam' in metadata['types'][type]:
         return True
     return False
 
