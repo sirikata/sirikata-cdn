@@ -6,6 +6,7 @@ import settings
 POOL = pycassa.pool.ConnectionPool(settings.CASSANDRA_KEYSPACE,
                                    server_list=settings.CASSANDRA_SERVERS,
                                    timeout=20,
+                                   pool_size=1,
                                    framed_transport=True,
                                    max_retries=5)
 
