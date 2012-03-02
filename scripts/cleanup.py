@@ -37,7 +37,7 @@ def get_referenced_keys():
                     #all of these could have a hash in them
                     hash_keys = ['zip', 'screenshot', 'hash', 'thumbnail',
                                  'progressive_stream', 'panda3d_base_bam',
-                                 'panda3d_full_bam']
+                                 'panda3d_full_bam', 'panda3d_bam']
                     for hash_key in hash_keys:
                         hash_key_val = type_data.get(hash_key)
                         if hash_key_val is not None:
