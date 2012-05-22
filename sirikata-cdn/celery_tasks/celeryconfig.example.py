@@ -1,3 +1,6 @@
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+
 BROKER_HOST = "localhost"
 BROKER_PORT = 5672
 BROKER_USER = "jeff"

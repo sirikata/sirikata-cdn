@@ -2,7 +2,12 @@ from cassandra_storage.cassandra_util import *
 import json
 import datetime
 import operator
+from django.conf import settings
+from django.shortcuts import redirect
+from django.http import HttpResponseForbidden
+from functools import wraps
 
+SUPERUSERS = getattr(settings, 'SUPERUSERS', [])
 USERS = getColumnFamily('Users')
 API_CONSUMERS = getColumnFamily('APIConsumers')
 
@@ -170,6 +175,7 @@ def get_user_by_username(username):
                                                              'consumer_secret'])
         user = {}
         user['username'] = username
+        user['is_superuser'] = username in SUPERUSERS
         user['name'] = cass_user['name']
         user['email'] = cass_user['email']
         user['access_token'] = cass_user.get('access_token')
@@ -197,3 +203,23 @@ class LazyUser(object):
 class UserMiddleware(object):
     def process_request(self, request):
         request.__class__.user = LazyUser()
+
+def login_required(f):
+    @wraps(f)
+    def wrapper(request, *args, **kwargs):
+        if not request.user['is_authenticated']:
+            return redirect('users.views.login')
+        return f(request, *args, **kwargs)
+    
+    return wrapper
+
+def superuser_required(f):
+    @wraps(f)
+    def wrapper(request, *args, **kwargs):
+        if not request.user['is_authenticated']:
+            return redirect('users.views.login')
+        if not request.user['is_superuser']:
+            return HttpResponseForbidden()
+        return f(request, *args, **kwargs)
+    
+    return wrapper

@@ -16,7 +16,8 @@ from cassandra_storage.cassandra_util import NotFoundError
 from oauth_server import oauth_server
 
 from users.middleware import save_upload_task, get_pending_upload, \
-                             remove_pending_upload, save_file_upload
+                             remove_pending_upload, save_file_upload, \
+                             login_required
 
 from content.utils import get_file_metadata, get_hash, get_content_by_date
 from content.utils import add_base_metadata, delete_file_metadata
@@ -76,9 +77,8 @@ class UploadChoiceForm(forms.Form):
             'class': '{required:true}'
         }))
 
+@login_required
 def upload_choice(request, task_id):
-    if not request.user['is_authenticated']:
-        return redirect('users.views.login')
 
     try:
         upload_rec = get_pending_upload(request.session['username'], task_id)
@@ -130,9 +130,8 @@ class UploadForm(forms.Form):
                 'class': '{required:true}'
             }))
 
+@login_required
 def upload(request, task_id=None):
-    if not request.user['is_authenticated']:
-        return redirect('users.views.login')
 
     if task_id:
         try:
@@ -339,9 +338,8 @@ class UploadImport(forms.Form):
             raise forms.ValidationError("Valid characters are letters, numbers, and [._-/].")
         return path
 
+@login_required
 def upload_import(request, task_id):
-    if not request.user['is_authenticated']:
-        return redirect('users.views.login')
 
     try:
         upload_rec = get_pending_upload(request.session['username'], task_id)
@@ -609,9 +607,8 @@ class CloneFile(forms.Form):
             raise forms.ValidationError("Valid characters are letters, numbers, and [._-/].")
         return path
 
+@login_required
 def clone_file(request, filename):
-    if not request.user['is_authenticated']:
-        return redirect('users.views.login')
     
     try: file_metadata = get_file_metadata("/%s" % filename)
     except NotFoundError: return HttpResponseNotFound()
