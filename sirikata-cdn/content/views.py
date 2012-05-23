@@ -17,7 +17,7 @@ from oauth_server import oauth_server
 
 from users.middleware import save_upload_task, get_pending_upload, \
                              remove_pending_upload, save_file_upload, \
-                             login_required
+                             login_required, superuser_required
 
 from content.utils import get_file_metadata, get_hash, get_content_by_date
 from content.utils import add_base_metadata, delete_file_metadata
@@ -573,6 +573,40 @@ def edit_file(request, filename):
                    'filename': filename}
     return render_to_response('content/edit.html', view_params, context_instance = RequestContext(request))
 
+class UpdateLabels(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(UpdateLabels, self).__init__(*args, **kwargs)
+        self.fields['labels'] = forms.CharField(required=False, max_length=1000)
+
+@superuser_required
+def update_labels(request, filename):
+    try: file_metadata = get_file_metadata(filename)
+    except NotFoundError: return HttpResponseNotFound()
+
+    split = filename.split("/")
+    file_username = split[0]
+    basepath = "/".join(split[:-1])
+    version = split[-1:][0]
+
+    if request.method != 'POST':
+        return HttpResponseBadRequest()
+
+    form = UpdateLabels(request.POST)
+    if not form.is_valid():
+        return HttpResponseBadRequest()
+    
+    labels = form.cleaned_data['labels'].split(',')
+    labels = [label.strip() for label in labels]
+
+    updated_info = {
+        'labels': labels,
+    }
+    add_base_metadata(basepath, version, updated_info)
+
+    json_result = {'state': 'SUCCESS',
+                   'updated_labels': ', '.join(labels)}
+    return HttpResponse(simplejson.dumps(json_result, default=json_handler), mimetype='application/json')
+
 def delete_file(request, filename):
     try: file_metadata = get_file_metadata("/%s" % filename)
     except NotFoundError: return HttpResponseNotFound()
@@ -887,6 +921,7 @@ def dns(request, filename):
 
     return response
 
+@superuser_required
 def compare_progressive(request):
     (content_items, older_start, newer_start) = get_content_by_date(start="", limit=5000)
     view_params = {

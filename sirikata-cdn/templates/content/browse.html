@@ -2,6 +2,48 @@
 {% load truncate_filters_extra %}
 {% load add_get_parameter %}
 
+{% block js_includes %}
+{{ block.super }}
+<script type="text/javascript">
+    var CSRF_TOKEN = '{{ csrf_token }}';
+
+    $(document).ready(function() {
+        $('input.label-editor').blur(function() {
+            var e = $(this);
+            
+            var prevValue = e.attr('data-original');
+            var curValue = e.attr('value');
+            if (prevValue == curValue || e.attr('disabled')) {
+                return;
+            }
+            
+            var fullPath = e.attr('data-full-path');
+            
+            e.attr('disabled', 'disabled');
+            e.addClass('ui-state-disabled');
+                            
+            $.ajax({ type: 'POST',
+                     url: '{% url content.views.update_labels '/' %}' + fullPath,
+                     data: {'labels': curValue},
+                     headers: {'X-CSRFToken': CSRF_TOKEN},
+                     dataType: 'text json' })
+                .success(function(data, textStatus, jqXHR) {
+                    var newLabels = data.updated_labels;
+                    e.attr('data-original', newLabels);
+                    e.attr('value', newLabels);
+                    e.removeClass('ui-state-disabled');
+                    e.removeAttr('disabled');
+                })
+                .error(function(jqXHR, textStatus, errorThrown) {
+                    e.removeClass('ui-state-disabled');
+                    e.addClass('ui-state-error');
+                });
+        });
+    });
+    
+</script>
+{% endblock js_includes %}
+
 {% block title %}{{ block.super }} | Latest Content{% endblock title %}
 
 {% block main_content %}
@@ -72,7 +114,16 @@
                     </a>
                 </td>
                 <td>
-                    {{ item.metadata.labels|join:", "|default:"None" }}
+                    {% if request.user.is_superuser %}
+                      <input class="label-editor ui-widget-content ui-corner-all"
+                             type="text"
+                             tabindex="{{ forloop.counter }}"
+                             value="{{ item.metadata.labels|join:", "|default:"" }}"
+                             data-original="{{ item.metadata.labels|join:", "|default:"" }}"
+                             data-full-path="{{ item.full_path|slice:"1:" }}" />
+                    {% else %}
+                      {{ item.metadata.labels|join:", "|default:"None" }}
+                    {% endif %}
                 </td>
                 <td>
                     <span class="timeago">{{ item.timestamp|timesince }} ago </span><br>

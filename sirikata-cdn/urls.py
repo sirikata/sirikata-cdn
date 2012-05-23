@@ -35,6 +35,7 @@ urlpatterns = patterns('',
     (r'^search$', 'content.views.search'),
     (r'^compare/progressive$', 'content.views.compare_progressive'),
     (r'^api/upload$', 'content.views.api_upload'),
+    (r'^admin/update-labels(?P<filename>[\w\-\./]+)$', 'content.views.update_labels'),
 )
 
 if settings.DEBUG:
