@@ -11,6 +11,7 @@ from django.utils.decorators import decorator_from_middleware
 from django.middleware.gzip import GZipMiddleware
 import re
 import posixpath
+import dateutil
 from cassandra_storage.cassandra_util import NotFoundError
 
 from oauth_server import oauth_server
@@ -21,9 +22,9 @@ from users.middleware import save_upload_task, get_pending_upload, \
 
 from content.utils import get_file_metadata, get_hash, get_content_by_date
 from content.utils import add_base_metadata, delete_file_metadata
-from content.utils import get_versions, copy_file, update_ttl
-from content.utils import user_search, get_content_by_name
-from content.utils import PathInfo
+from content.utils import get_versions, copy_file, update_ttl, search_index
+from content.utils import get_content_by_name, PathInfo, json_handler
+from content.utils import get_model_data_from_path
 
 from celery_tasks.import_upload import import_upload, place_upload
 from celery_tasks.import_upload import ColladaError, DatabaseError, NoDaeFound
@@ -34,14 +35,6 @@ from celery.result import AsyncResult
 MIN_TTL = 60
 MAX_TTL = 86400
 INITIAL_TTL = 3600
-
-def json_handler(obj):
-    if hasattr(obj, 'isoformat'):
-        return obj.isoformat()
-    #elif isinstance(obj, ...):
-    #    return ...
-    else:
-        raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(Obj), repr(Obj))
 
 def browse(request):
     start = request.GET.get('start', '')
@@ -360,7 +353,7 @@ def upload_import(request, task_id):
             path = "/%s/%s" % (request.session['username'], form.cleaned_data['path'])
             description = form.cleaned_data['description']
             labels = form.cleaned_data['labels'].split(',')
-            labels = [label.strip() for label in labels]
+            labels = [label.strip() for label in labels if len(label.strip()) > 0]
 
             task = place_upload.delay(upload_rec['main_rowkey'], upload_rec['subfiles'],
                                       title, path, description, selected_dae=upload_rec['dae_choice'])
@@ -483,7 +476,7 @@ def api_upload(request):
                 path = "/%s/%s" % (username, form.cleaned_data['path'])
                 description = form.cleaned_data['description']
                 labels = form.cleaned_data['labels'].split(',')
-                labels = [label.strip() for label in labels]
+                labels = [label.strip() for label in labels if len(label.strip()) > 0]
                 main_filename = form.cleaned_data['main_filename']
                 ephemeral = form.cleaned_data['ephemeral']
                 ttl_time = form.cleaned_data['ttl_time']
@@ -549,17 +542,14 @@ def edit_file(request, filename):
             title = form.cleaned_data['title']
             description = form.cleaned_data['description']
             labels = form.cleaned_data['labels'].split(',')
-            labels = [label.strip() for label in labels]
-
-            try:
-                updated_info = {
-                    'title': title,
-                    'description': description,
-                    'labels': labels,
-                }
-                add_base_metadata(basepath, version, updated_info)
-            except:
-                return HttpResponseServerError("There was an error editing your file.")
+            labels = [label.strip() for label in labels if len(label.strip()) > 0]
+            
+            updated_info = {
+                'title': title,
+                'description': description,
+                'labels': labels,
+            }
+            add_base_metadata(basepath, version, updated_info)
 
             return redirect('content.views.view', filename)
     else:
@@ -596,7 +586,7 @@ def update_labels(request, filename):
         return HttpResponseBadRequest()
     
     labels = form.cleaned_data['labels'].split(',')
-    labels = [label.strip() for label in labels]
+    labels = [label.strip() for label in labels if len(label.strip()) > 0]
 
     updated_info = {
         'labels': labels,
@@ -759,21 +749,36 @@ def ephemeral_keepalive(request, filename):
     return HttpResponse("")
 
 def search(request):
-    query = request.GET.get('q', '')
-    results = user_search(query)
-    names = [result['id'] for result in results]
-    results = get_content_by_name(names)
+    query = request.GET.get('q', '*')
+    results = search_index(q=query)
+    
+    items = []
+    for r in results:
+        full_path = r['id']
+        item_data = simplejson.loads(r['metadata_json'])
+        item_data['timestamp'] = dateutil.parser.parse(item_data['timestamp'])
+        items.append(item_data)
+    
     view_params = {
         'query': query,
-        'results': results
+        'content_items': items
     }
     return render_to_response('content/search.html', view_params, context_instance = RequestContext(request))
 
 def search_json(request):
-    query = request.REQUEST.get('q', '')
-    results = user_search(query)
-    view_params = {'results': results}
-    response = HttpResponse(simplejson.dumps(view_params, default=json_handler), mimetype='application/json')
+    query = request.GET.get('q', '*')
+    results = search_index(q=query)
+    
+    items = []
+    for r in results:
+        full_path = r['id']
+        item_data = simplejson.loads(r['metadata_json'])
+        item_data['timestamp'] = dateutil.parser.parse(item_data['timestamp'])
+        items.append(item_data)
+        
+    output = {'content_items': items}
+    
+    response = HttpResponse(simplejson.dumps(output, default=json_handler, indent=4), mimetype='application/json')
     response['Access-Control-Allow-Origin'] = '*'
     return response
 

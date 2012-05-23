@@ -24,7 +24,10 @@ SECRET_KEY = 'u$az#fnxh2rk=+-lwvjfbkmfxzwq5b8xwrn%y#$-vc9ibb$oxo'
 OPENID_REALM = 'http://localhost:8000/'
 
 # A list of usernames that have administrator privileges
-SUPERUSERS = set()
+SUPERUSERS = set(['jterrace'])
+
+# URL where solr is running
+SOLR_URL = 'http://localhost:8080/solr/'
 
 # ===============================================================
 

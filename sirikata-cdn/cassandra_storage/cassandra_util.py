@@ -38,9 +38,9 @@ def getColumnFamily(name):
                                 read_consistency_level=READ_CONSISTENCY,
                                 write_consistency_level=WRITE_CONSISTENCY)
 
-def getRecord(cf, rowkey, columns=None):
+def getRecord(cf, rowkey, columns=None, **kwargs):
     try:
-        return cf.get(rowkey, columns=columns)
+        return cf.get(rowkey, columns=columns, **kwargs)
     except NotFoundException:
         raise NotFoundError('Record %s not found' % (rowkey,))
     except InvalidRequestException:

@@ -1,13 +1,16 @@
 from cassandra_storage.cassandra_util import *
 import json
+import sys
 import time
 import datetime
 import operator
 import posixpath
 import pysolr
 from users.middleware import remove_file_upload, save_file_upload
+from django.conf import settings
 
-SOLR_URL = 'http://localhost:8983/solandra/SirikataCDN'
+SOLR_URL = getattr(settings, 'SOLR_URL')
+SOLR_CONNECTION = None if SOLR_URL is None else pysolr.Solr(settings.SOLR_URL)
 
 NAMES = getColumnFamily('Names')
 FILES = getColumnFamily('Files')
@@ -146,18 +149,6 @@ def get_content_by_date(start="", limit=25, reverse=True):
         try: removeColumns(NAMESBYTIME, cur_index_row, columns=[content_item['full_timestamp']])
         except DatabaseError: pass
 
-    # Add to solandra index.
-    #for item in found_items:
-    #    solr = pysolr.Solr(SOLR_URL)
-    #    solr.add([{
-    #        'id': item['base_path'],
-    #        'title': item['metadata']['title'],
-    #        'description': item['metadata']['description'],
-    #        'author': item['username'],
-    #        'date': item['timestamp'],
-    #        'tags': item['metadata'].get('labels', []),
-    #    }])
-
     found_items = sorted(found_items, key=operator.itemgetter("timestamp"), reverse=True)
 
     return found_items, older_start, newer_start
@@ -174,15 +165,17 @@ def get_file_metadata(filename):
     file_key = "/".join(split[:-1])
 
     try:
-        rec = getRecord(NAMES, file_key, columns=[version, "type"])
+        rec = getRecord(NAMES, file_key, columns=[version, "type"], include_timestamp=True)
     except DatabaseError:
         raise
 
     if version not in rec:
         raise NotFoundError("Given file version not found")
 
-    version_data = json.loads(rec[version])
-    version_data['type'] = rec['type']
+    version_data, timestamp = rec[version]
+    version_data = json.loads(version_data)
+    version_data['type'] = rec['type'][0]
+    version_data['timestamp'] = timestamp
     return version_data
 
 def update_ttl(filename, ttl):
@@ -298,6 +291,8 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, zip_ke
             cur_index_row = index_rows[0].split(",")[-1]
 
         insertRecord(NAMESBYTIME, cur_index_row, {long(time.time() * 1e6) : "%s/%s" % (path, version_num)})
+        
+    update_single_search_index_item(path, version=version_num)
 
 def get_new_version_from_path(path, file_type):
     try:
@@ -332,6 +327,7 @@ def add_metadata(path, version_num, type_id, metadata):
         version_dict['types'][type_id][key] = val
 
     insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
+    update_single_search_index_item(path, version=version_num)
     
 def copy_file(frompath, fromversion, topath, updated_metadata=None):
     rec = getRecord(NAMES, frompath, columns=[fromversion, 'type'])
@@ -373,19 +369,72 @@ def add_base_metadata(path, version_num, metadata):
         version_dict[key] = val
 
     insertRecord(NAMES, path, columns={version_num: json.dumps(version_dict)})
+    update_single_search_index_item(path, version=version_num)
 
 def delete_file_metadata(path, version_num):
     username = path.split("/")[1]
     remove_file_upload(username, "%s/%s" % (path, version_num))
     removeColumns(NAMES, path, columns=[version_num])
+    update_single_search_index_item(path, version=version_num)
 
-def user_search(query):
-    if query == '':
-        return []
-    solr = pysolr.Solr(SOLR_URL)
-    args = {
-        'defType': 'dismax',
-        'qf': r'title^3.0 description author^1.5 tags^2.0 date'
+def json_handler(obj):
+    if hasattr(obj, 'isoformat'):
+        return obj.isoformat()
+    else:
+        raise TypeError()
+
+def item_to_search_fields(item):
+    d = { 'id': item['full_path'],
+          'title': item['metadata']['title'],
+          'description': item['metadata']['description'],
+          'tags': item['metadata'].get('labels', []),
+          'date': item['timestamp'],
+          'username': item['username'],
+          'metadata_json': json.dumps(item, default=json_handler),
     }
-    results = solr.search(query, **args)
-    return [result for result in results]
+    print d['tags']
+    return d
+
+def update_entire_search_index():
+    if SOLR_CONNECTION is None:
+        return 0
+    
+    (content_items, older_start, newer_start) = get_content_by_date(start="", limit=2000000)
+    
+    items_to_insert = []
+    for item in content_items:
+        items_to_insert.append(item_to_search_fields(item))
+    
+    for x in items_to_insert:
+        print x['id']
+    
+    SOLR_CONNECTION.delete(q='*:*')
+    SOLR_CONNECTION.add(items_to_insert)
+    return len(items_to_insert)
+
+def update_single_search_index_item(path, version=None):
+    if SOLR_CONNECTION is None:
+        return 0
+    
+    if version is not None:
+        path = path + '/' + version
+    
+    model_data = get_model_data_from_path(path)
+    try:
+        model_data['metadata'] = get_file_metadata(path)
+    except NotFoundError:
+        SOLR_CONNECTION.delete(id=path)
+        return
+        
+    model_data['timestamp'] = datetime.datetime.fromtimestamp(model_data['metadata']['timestamp'] / 1e6)
+    to_insert = [item_to_search_fields(model_data)]
+    SOLR_CONNECTION.add(to_insert)
+    return 1
+
+def search_index(q='*', start=0, rows=10):
+    if SOLR_CONNECTION is None:
+        return []
+    
+    results = SOLR_CONNECTION.search(q, start=start, rows=rows)
+    return results
+    

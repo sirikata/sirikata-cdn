@@ -149,6 +149,7 @@ def main():
         delete_unused(unused_keys)
 
 def add_dirs():
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
     thisdir = os.path.dirname( os.path.realpath( __file__ ) )
     upone, tail = os.path.split(thisdir)
     cdndir = os.path.join(upone, 'sirikata-cdn')

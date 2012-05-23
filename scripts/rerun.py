@@ -1,4 +1,5 @@
 import sys
+import os
 import os.path
 import time
 from celery.execute import send_task
@@ -165,6 +166,7 @@ def main():
     wait_all()
 
 def add_dirs():
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
     thisdir = os.path.dirname( os.path.realpath( __file__ ) )
     upone, tail = os.path.split(thisdir)
     cdndir = os.path.join(upone, 'sirikata-cdn')
