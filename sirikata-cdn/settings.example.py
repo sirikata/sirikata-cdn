@@ -26,8 +26,10 @@ OPENID_REALM = 'http://localhost:8000/'
 # A list of usernames that have administrator privileges
 SUPERUSERS = set(['jterrace'])
 
-# URL where solr is running
-SOLR_URL = 'http://localhost:8080/solr/'
+# URL for a Solr server that items can be read from
+SOLR_READ_URL = 'http://localhost:8080/solr/'
+# URL for a Solr server where items can be written to
+SOLR_WRITE_URL = 'http://localhost:8080/solr/'
 
 # ===============================================================
 

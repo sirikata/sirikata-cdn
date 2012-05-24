@@ -8,9 +8,10 @@ import posixpath
 import pysolr
 from users.middleware import remove_file_upload, save_file_upload
 from django.conf import settings
+from celery.execute import send_task
 
-SOLR_URL = getattr(settings, 'SOLR_URL')
-SOLR_CONNECTION = None if SOLR_URL is None else pysolr.Solr(settings.SOLR_URL)
+SOLR_URL = getattr(settings, 'SOLR_READ_URL')
+SOLR_CONNECTION = None if SOLR_URL is None else pysolr.Solr(SOLR_URL)
 
 NAMES = getColumnFamily('Names')
 FILES = getColumnFamily('Files')
@@ -392,44 +393,13 @@ def item_to_search_fields(item):
           'username': item['username'],
           'metadata_json': json.dumps(item, default=json_handler),
     }
-    print d['tags']
     return d
 
-def update_entire_search_index():
-    if SOLR_CONNECTION is None:
-        return 0
-    
-    (content_items, older_start, newer_start) = get_content_by_date(start="", limit=2000000)
-    
-    items_to_insert = []
-    for item in content_items:
-        items_to_insert.append(item_to_search_fields(item))
-    
-    for x in items_to_insert:
-        print x['id']
-    
-    SOLR_CONNECTION.delete(q='*:*')
-    SOLR_CONNECTION.add(items_to_insert)
-    return len(items_to_insert)
-
 def update_single_search_index_item(path, version=None):
-    if SOLR_CONNECTION is None:
-        return 0
-    
     if version is not None:
         path = path + '/' + version
     
-    model_data = get_model_data_from_path(path)
-    try:
-        model_data['metadata'] = get_file_metadata(path)
-    except NotFoundError:
-        SOLR_CONNECTION.delete(id=path)
-        return
-        
-    model_data['timestamp'] = datetime.datetime.fromtimestamp(model_data['metadata']['timestamp'] / 1e6)
-    to_insert = [item_to_search_fields(model_data)]
-    SOLR_CONNECTION.add(to_insert)
-    return 1
+    send_task("celery_tasks.search.update_single_search_index_item", args=[path])
 
 def search_index(q='*', start=0, rows=10):
     if SOLR_CONNECTION is None:

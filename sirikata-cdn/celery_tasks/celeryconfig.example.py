@@ -21,7 +21,8 @@ CELERY_IMPORTS = (
     "celery_tasks.generate_optimized",
     "celery_tasks.generate_metadata",
     "celery_tasks.generate_progressive",
-    "celery_tasks.generate_panda3d"
+    "celery_tasks.generate_panda3d",
+    "celery_tasks.search",
 )
 
 CELERY_ROUTES = {

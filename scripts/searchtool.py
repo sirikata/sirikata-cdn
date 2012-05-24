@@ -12,13 +12,17 @@ def list_all(args):
     print 'Found %d results.' % len(results)
 
 def update_all(args):
-    num_updated = update_entire_search_index()
-    print '%d items updated.' % num_updated
+    print 'Firing off task to update entire search index...'
+    result = update_entire_search_index.delay()
+    print 'Task finished.'
+    print '%d items indexed.' % result.get()
 
 def update_single(args):
     p = args.path
-    num_updated = update_single_search_index_item(p)
-    print '%d items updated.' % num_updated
+    print 'Firing off task to update %s' % p
+    result = update_single_search_index_item.delay(p)
+    print 'Task finished.'
+    print '%d items indexed.' % result.get()
 
 def main():
     parser = argparse.ArgumentParser(description='Tool for dealing with search')
@@ -49,5 +53,6 @@ def add_dirs():
 
 if __name__ == '__main__':
     add_dirs()
-    from content.utils import update_entire_search_index, search_index, update_single_search_index_item
+    from content.utils import search_index
+    from celery_tasks.search import update_entire_search_index, update_single_search_index_item
     main()
