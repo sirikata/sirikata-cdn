@@ -9,4 +9,4 @@ httplib2
 urllib3
 BeautifulSoup
 poster
-dateutil
+python-dateutil==1.5
