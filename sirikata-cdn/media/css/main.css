@@ -340,6 +340,9 @@ div.section_box {
 	margin: 0px 0px 0px 20px;
 }
 
+input.label-editor {
+    width: 90%;
+}
 
 form#search_form {
     padding: 0;
