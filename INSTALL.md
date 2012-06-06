@@ -41,6 +41,9 @@ Celery Daemon
 For Ubuntu Users
 ----------------
 
+* Install cassandra, following http://wiki.apache.org/cassandra/DebianPackaging
+  Make sure you use 10x rather than something newer as that's the current version
+  we guarantee compatibility with.
 * Add the Panda3D package repository (replacing 'maverick' with your
   release): echo "deb http://archive.panda3d.org/ubuntu maverick main"
   > /etc/apt/sources.list.d/panda3d.list && apt-get update
