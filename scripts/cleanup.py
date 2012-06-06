@@ -59,8 +59,10 @@ def save_unused_keys(unused_keys):
     for unused_key in unused_keys:
         key_data = get_hash(unused_key)
         size_ct += len(key_data['data'])
+        unused_key = unused_key.encode('ascii')
+        mimetype = key_data['mimetype'].encode('ascii')
         db[unused_key] = marshal.dumps({ 'data':key_data['data'],
-                                         'mimetype':key_data['mimetype'] })
+                                         'mimetype':mimetype })
     db.close()
     return size_ct
 
