@@ -57,7 +57,10 @@ def save_unused_keys(unused_keys):
     size_ct = 0
     db = bsddb.hashopen(TEMP_DATA_FILE, 'n')
     for unused_key in unused_keys:
-        key_data = get_hash(unused_key)
+        try:
+            key_data = get_hash(unused_key)
+        except NotFoundError:
+            key_data = ""
         size_ct += len(key_data['data'])
         unused_key = unused_key.encode('ascii')
         mimetype = key_data['mimetype'].encode('ascii')
@@ -162,4 +165,5 @@ def add_dirs():
 if __name__ == '__main__':
     add_dirs()
     from content.utils import list_file_keys, list_content, get_hash, save_file_data, delete_hash
+    from cassandra_storage.cassandra_util import NotFoundError
     main()
