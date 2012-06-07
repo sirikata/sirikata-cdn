@@ -857,9 +857,10 @@ def dns(request, filename):
             base_path = "/".join(parts[:-3])
             type_id = parts[-3]
     
-        try: file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
-        except NotFoundError: return HttpResponseNotFound()
-        except: return HttpResponseServerError()
+        try: 
+            file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
+        except NotFoundError:
+            return HttpResponseNotFound()
 
         if type_id not in file_metadata['types']:
             return HttpResponseNotFound()
