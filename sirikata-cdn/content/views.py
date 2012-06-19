@@ -766,8 +766,16 @@ def search(request):
     return render_to_response('content/search.html', view_params, context_instance = RequestContext(request))
 
 def search_json(request):
+    try: start = int(request.GET.get('start', 0))
+    except ValueError: start = 0
+    try: rows = int(request.GET.get('rows', 10))
+    except ValueError: rows = 10
+    
+    if rows > 100:
+        rows = 100
+    
     query = request.GET.get('q', '*')
-    results = search_index(q=query)
+    results = search_index(q=query, start=start, rows=rows)
     
     items = []
     for r in results:
@@ -775,8 +783,17 @@ def search_json(request):
         item_data = simplejson.loads(r['metadata_json'])
         item_data['timestamp'] = dateutil.parser.parse(item_data['timestamp'])
         items.append(item_data)
-        
-    output = {'content_items': items}
+    
+    next_start = start + rows
+    if next_start >= results.hits:
+        next_start = None
+    previous_start = start - rows
+    if previous_start < 0:
+        previous_start = 0
+    output = {'content_items': items,
+              'next_start': next_start,
+              'previous_start': previous_start,
+              'hits': results.hits}
     
     response = HttpResponse(simplejson.dumps(output, default=json_handler, indent=4), mimetype='application/json')
     response['Access-Control-Allow-Origin'] = '*'
