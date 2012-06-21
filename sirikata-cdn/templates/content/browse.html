@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load truncate_filters_extra %}
 {% load add_get_parameter %}
 
 {% block js_includes %}
@@ -48,69 +47,12 @@
 
 {% block main_content %}
 
-<div id="top_listing_bar">
-    <div id="result_info">{{ content_items|length }} Result{{ content_items|pluralize }}</div>
-    <div id="result_options">
-		<div id="icon_or_list">
-			{% if view == 'icon' %}
-			    Icon | <a href = "{% url content.views.browse %}{% add_get_parameter view='list' %}">List</a>
-			{% else %}
-			    <a href = "{% url content.views.browse %}{% add_get_parameter view='icon' %}">Icon</a> | List
-			{% endif %}
-		</div>
-		<div id="item_count">
-			Show
-			<a href="{% url content.views.browse %}{% add_get_parameter count='25' %}">25</a>,
-			<a href="{% url content.views.browse %}{% add_get_parameter count='50' %}">50</a>,
-			<a href="{% url content.views.browse %}{% add_get_parameter count='100' %}">100</a>
-			items.
-		</div>
-	</div>
-</div>
+{% include "content/results_header.html" %}
 
 {% if view == 'icon' %}
     {% include "content/icons.html" %}
 {% else %}
-    <div class="pagelet">
-    <table>
-        <thead>
-            <th>Author</th>
-            <th>Model</th>
-            <th>Labels</th>
-            <th>Time</th>
-        </thead>
-        {% for item in content_items %}
-            <tr>
-                <td><a href = "{% url users.views.profile item.username %}">{{ item.username }}</a><br /></td>
-                <td>
-                    {% if item.metadata.types.original.thumbnail %}
-                        <img src="{% url content.views.download item.metadata.types.original.thumbnail %}" class = 'tiny_thumbnail' />
-                    {% else %}
-                        <img src="{{ MEDIA_URL }}images/question.png" class = 'tiny_thumbnail'/>
-                    {% endif %}
-                    <a href="{% url content.views.view item.full_path|slice:"1:" %}">
-                    <span class="title">{{ item.metadata.title|truncate_chars:15 }}</span>
-                    </a>
-                </td>
-                <td>
-                    {% if request.user.is_superuser %}
-                      <input class="label-editor ui-widget-content ui-corner-all"
-                             type="text"
-                             tabindex="{{ forloop.counter }}"
-                             value="{{ item.metadata.labels|join:", "|default:"" }}"
-                             data-original="{{ item.metadata.labels|join:", "|default:"" }}"
-                             data-full-path="{{ item.full_path|slice:"1:" }}" />
-                    {% else %}
-                      {{ item.metadata.labels|join:", "|default:"None" }}
-                    {% endif %}
-                </td>
-                <td>
-                    <span class="timeago">{{ item.timestamp|timesince }} ago </span><br>
-                </td>
-            </tr>
-        {% endfor %}
-    </table>
-    </div>
+    {% include "content/listing.html" %}
 {% endif %}
 
 <div id="listing_nav">

@@ -44,6 +44,9 @@ def browse(request):
     try: reverse = bool(int(request.GET.get('reverse', True)))
     except ValueError: reverse = True
 
+    if count > 100:
+        count = 100
+
     (content_items, older_start, newer_start) = get_content_by_date(start=start, limit=count, reverse=reverse)
     view_params = {
         'content_items': content_items,
@@ -749,8 +752,18 @@ def ephemeral_keepalive(request, filename):
     return HttpResponse("")
 
 def search(request):
+    start = request.GET.get('start', '')
+    view = request.GET.get('view', 'icon')
+    try: start = int(request.GET.get('start', '0'))
+    except ValueError: start = 0
+    try: count = int(request.GET.get('count', '25'))
+    except ValueError: count = 25
+    
+    if count > 100:
+        count = 100
+    
     query = request.GET.get('q', '*')
-    results = search_index(q=query)
+    results = search_index(q=query, start=start, rows=count)
     
     items = []
     for r in results:
@@ -759,7 +772,22 @@ def search(request):
         item_data['timestamp'] = dateutil.parser.parse(item_data['timestamp'])
         items.append(item_data)
     
+    next_start = start + count
+    if next_start >= results.hits:
+        next_start = None
+    previous_start = start - count
+    if previous_start < 0:
+        previous_start = 0
+    if previous_start == start:
+        previous_start = None
     view_params = {
+        'view': view,
+        'hits': results.hits,
+        'get_params': request.GET,
+        'start_display': start + 1,
+        'end_display': start + len(results),
+        'next_start': next_start,
+        'previous_start': previous_start,
         'query': query,
         'content_items': items
     }

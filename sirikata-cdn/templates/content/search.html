@@ -6,5 +6,28 @@
 
 
 {% block main_content %}
-{% include "content/icons.html" %}
+
+{% include "content/results_header.html" %}
+
+{% if view == 'icon' %}
+    {% include "content/icons.html" %}
+{% else %}
+    {% include "content/listing.html" %}
+{% endif %}
+
+<div id="listing_nav">
+    <div id="prev_box">
+    {% if previous_start != None %}
+    <a href="{% add_get_parameter start=previous_start %}">&laquo; Previous</a>
+    {% endif %}
+    </div>
+    Results {{ start_display }}-{{ end_display }} of {{ hits }}
+    <div id="next_box">
+    {% if next_start != None %}
+    <a href="{% add_get_parameter start=next_start %}">Next &raquo;</a>
+    {% endif %}
+    </div>
+    &nbsp;
+</div>
+
 {% endblock main_content %}

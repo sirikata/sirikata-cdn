@@ -300,15 +300,22 @@ div#top_listing_bar div div + div {
 div#listing_nav {
 	font-size: 0.9em;
 	width: 100%;
+	text-align: center;
+	font-style: italic;
+	font-weight: bold;
 }
 div#listing_nav div {
 	
 }
 div#listing_nav div#prev_box {
     float: left;
+    font-style: normal;
+    font-weight: normal;
 }
 div#listing_nav div#next_box {
 	float: right;
+	font-style: normal;
+    font-weight: normal;
 }
 
 img.tiny_thumbnail {
