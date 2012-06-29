@@ -16,6 +16,7 @@ BASE_OPEN3DHUB = 'http://localhost:8000'
 UPLOAD_URL = BASE_OPEN3DHUB + '/api/upload'
 UPLOAD_STATUS_URL = BASE_OPEN3DHUB + '/upload/processing/%TASK_ID%?api&username=%USERNAME%'
 API_MODELINFO_URL = BASE_OPEN3DHUB + '/api/modelinfo%(path)s'
+DNS_URL = BASE_OPEN3DHUB + '/dns%(path)s'
 KEEPALIVE_URL = BASE_OPEN3DHUB + '/api/keepalive%(path)s?username=%(username)s&ttl=%(ttl)d'
 
 CONSUMER_KEY = 'lVk5aGvdzZpVP4oh34gE80qB6KW67LfJaBQBD9BB2ec='
@@ -38,18 +39,32 @@ def exitprint(resp, content):
     print "Error code: %s" % resp['status']
     sys.exit(1)
 
+def usage_exit():
+    print >> sys.stderr, 'Usage: python ephemeral.py main_file [[subfile1name subfile1path] | subfile1] ...]'
+    sys.exit(1)
+
 def main():
-    if len(sys.argv) < 2 or len(sys.argv) % 2 != 0:
-        print >> sys.stderr, 'Usage: python ephemeral.py main_file [subfile1name subfile1path ...]'
-        sys.exit(1)
+    
+    if len(sys.argv) < 2:
+        usage_exit()
     
     opts, args = getopt.getopt(sys.argv[1:], ':')
     upload_files = [args[0]]
     main_filename = os.path.basename(args[0])
     
     subfile_map = {}
-    for (name, path) in zip(args[1::2], args[2::2]):
-        subfile_map[name] = path
+    i = 1
+    while i < len(args):
+        if os.path.isfile(args[i]):
+            upload_files.append(args[i])
+        else:
+            fname = args[i]
+            if i+1 >= len(args):
+                usage_exit()
+            fpath = args[i+1]
+            subfile_map[fname] = fpath
+            i += 1
+        i += 1
     
     consumer = oauth2.Consumer(CONSUMER_KEY, CONSUMER_SECRET)
     access_token = oauth2.Token(ACCESS_KEY, ACCESS_SECRET)
@@ -135,14 +150,14 @@ def main():
     print
     
     half_updated = False
-    
+    subfile_names = set()
     while time.time() - start_time < TTL_TIME * 1.5:
         
         if not half_updated and time.time() - start_time > TTL_TIME / 2.0:
             print
             print 'Updating TTL value by 50%'
-            print
             
+            print 'Updating TTL for main file', uploaded_path
             toget = KEEPALIVE_URL % {'path': uploaded_path,
                                      'username': USERNAME,
                                      'ttl': TTL_TIME}
@@ -153,8 +168,23 @@ def main():
             if resp['status'] != '200':
                 print 'Updating TTL failed'
                 exitprint(resp, content)
+            
+            for subfile_name in subfile_names:
+                basename = subfile_name.split('/')[-2]
+                if basename not in subfile_map:
+                    print 'Updating TTL for subfile', subfile_name
                 
-            print
+                    toget = KEEPALIVE_URL % {'path': subfile_name,
+                                             'username': USERNAME,
+                                             'ttl': TTL_TIME}
+        
+                    client = oauth2.Client(consumer, token=access_token)
+                    resp, content = client.request(toget, method='GET')
+                    
+                    if resp['status'] != '200':
+                        print 'Updating subfile TTL failed'
+                        exitprint(resp, content)
+            
             print 'Updating TTL by 50% success'
             print
             
@@ -167,6 +197,20 @@ def main():
         if 'fullpath' not in result or result['fullpath'] != uploaded_path[1:]:
             print 'Got wrong path in API request'
             exitprint(resp, content)
+
+
+        subfile_names = set(result['metadata']['types']['original']['subfiles'])
+        for subfile_name in subfile_names:
+            lookup_url = DNS_URL % {'path': subfile_name}
+            resp, content = h.request(lookup_url, "GET")
+            if resp['status'] != '200':
+                print 'Got wrong status code for subfile DNS lookup', subfile_name
+                exitprint(resp, content)
+            result = json.loads(content)
+            if 'Hash' not in result:
+                print 'Got wrong JSON result for subfile DNS lookup', subfile_name
+                exitprint(resp, content)
+        
         print 'Model still there... %d seconds left' % int(start_time + TTL_TIME * 1.5 - time.time())
         time.sleep(5)
         
@@ -177,13 +221,25 @@ def main():
     
     print
     print 'Checking that model no longer exists'
-    print
     resp, content = h.request(json_info_url, "GET")
     if resp['status'] != '404':
         exitprint(resp, content)
+    print 'Main file correctly returned 404'
+    
+    for subfile_name in subfile_names:
+        basename = subfile_name.split('/')[-2]
+        lookup_url = DNS_URL % {'path': subfile_name}
+        resp, content = h.request(lookup_url, "GET")
+        correct_status = '200'
+        if basename not in subfile_map:
+            correct_status = '404'
+        if resp['status'] != correct_status:
+            print 'Got wrong status code for subfile DNS lookup', subfile_name
+            exitprint(resp, content)
+        print 'Subfile', subfile_name, 'correctly returned', correct_status
         
     print
-    print 'After TTL expired, API is now returning 404, the correct result. Done.'
+    print 'Everything checked out. Done.'
     print
     
 if __name__ == '__main__':

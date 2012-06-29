@@ -247,10 +247,10 @@ def list_file_keys(columns=None):
     for r in recs:
         yield r
 
-def save_file_name(path, version_num, hash_key, length):
+def save_file_name(path, version_num, hash_key, length, ttl=None):
     dict = {'hash': hash_key, 'size': length}
     col_val = json.dumps(dict)
-    insertRecord(NAMES, path, columns={version_num: col_val})
+    insertRecord(NAMES, path, columns={version_num: col_val}, ttl=ttl)
 
 def save_version_type(path, version_num, hash_key, length, subfile_names, zip_key, type_id, title=None, description=None, create_index=True, ttl=None):
     try:

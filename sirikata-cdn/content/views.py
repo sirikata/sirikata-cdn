@@ -435,9 +435,6 @@ class APIUpload(UploadImport, UploadForm):
         if not ephemeral and subfiles:
             raise forms.ValidationError("Subfiles parameter is only valid when uploading ephemeral files")
         
-        if ephemeral and len(self.file_names) > 1:
-            raise forms.ValidationError("Only one file can be uploaded when uploading an ephemeral file")
-        
         return self.cleaned_data
 
 @csrf_exempt
@@ -494,11 +491,15 @@ def api_upload(request):
                 filename = main_filename
 
                 if ephemeral:
-                    task = place_upload.delay(main_rowkey, ephemeral_subfiles, title, path,
-                                              description, create_index=False, ephemeral_ttl=ttl_time)
+                    create_index = False
                 else:
-                    task = place_upload.delay(main_rowkey, subfiles, title, path,
-                                              description, create_index=True)
+                    ttl_time = None
+                    create_index = True
+                    ephemeral_subfiles = None
+    
+                task = place_upload.delay(main_rowkey, subfiles, title, path,
+                                          description, create_index=create_index,
+                                          ephemeral_ttl=ttl_time, ephemeral_subfiles=ephemeral_subfiles)
     
                 save_upload_task(username=username,
                                  task_id=task.task_id,
@@ -897,6 +898,8 @@ def dns(request, filename):
             base_path = "/".join(parts[:-2])
             type_id = parts[-2]
             versions = get_versions('/' + base_path)
+            if versions is None:
+                return HttpResponseNotFound()
             version_num = str(max(map(int, versions)))
         else:
             base_path = "/".join(parts[:-3])

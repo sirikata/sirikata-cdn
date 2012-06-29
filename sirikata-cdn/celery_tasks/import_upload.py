@@ -193,18 +193,27 @@ def import_upload(main_rowkey, subfiles, selected_dae=None):
     return dae_zip_name
 
 @task
-def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None, create_index=True, ephemeral_ttl=None):
+def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None, create_index=True, ephemeral_ttl=None, ephemeral_subfiles=None):
     import_upload.update_state(state="LOADING")
     file_data = get_temp_file(main_rowkey)
     (zip, dae_zip_name, dae_data) = get_file_or_zip(file_data, selected_dae)
     
+    if ephemeral_subfiles is None:
+        ephemeral_subfiles = {}
+    
     if ephemeral_ttl is not None:
-        eph_subfile_metadata = get_multi_file_metadata(subfiles.values())
+        eph_subfile_metadata = get_multi_file_metadata(ephemeral_subfiles.values())
         eph_subfile_hashes = [m['hash'] for m in eph_subfile_metadata.itervalues()]
         eph_subfile_data = multi_get_hash(eph_subfile_hashes)
+        
         def eph_subfile_getter(name):
-            return eph_subfile_data[eph_subfile_metadata[subfiles[name]]['hash']]['data']
-        (collada_obj, subfile_data, image_objs) = get_collada_and_images(zip, dae_zip_name, dae_data, subfiles, subfile_getter=eph_subfile_getter)
+            if name in ephemeral_subfiles:
+                return eph_subfile_data[eph_subfile_metadata[ephemeral_subfiles[name]]['hash']]['data']
+            else:
+                return get_temp_file(subfiles[name])
+        
+        combined_subfiles = dict(ephemeral_subfiles.items() + subfiles.items())
+        (collada_obj, subfile_data, image_objs) = get_collada_and_images(zip, dae_zip_name, dae_data, combined_subfiles, subfile_getter=eph_subfile_getter)
     else:
         import_upload.update_state(state="CHECKING_COLLADA")
         (collada_obj, subfile_data, image_objs) = get_collada_and_images(zip, dae_zip_name, dae_data, subfiles)
@@ -212,47 +221,48 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     import_upload.update_state(state="SAVING_ORIGINAL")
     try: new_version_num = get_new_version_from_path(path, file_type="collada")
     except cass.DatabaseError: raise DatabaseError()
-    
-    if ephemeral_ttl is not None:
-        subfile_names = subfiles.values()
-    else:
-        #Make sure image paths are just the base name
-        current_prefix = "original"
-        subfile_names = []
-        image_names = []
-        for img in collada_obj.images:
-            rel_path = img.path
-            base_name = posixpath.basename(img.path)
-            orig_base_name = base_name
+        
+    #Make sure image paths are just the base name
+    current_prefix = "original"
+    subfile_names = []
+    image_names = []
+    for img in collada_obj.images:
+        rel_path = img.path
+        base_name = posixpath.basename(img.path)
+        orig_base_name = base_name
+        
+        if base_name in ephemeral_subfiles:
+            subfile_names.append(ephemeral_subfiles[base_name])
+            continue
+        
+        #strip out any character not allowed
+        base_name = re.sub('[^\w\-\.]', '', base_name)
+        
+        #make sure that referenced texture files are unique
+        while base_name in image_names:
+            dot = base_name.rfind('.')
+            ext = base_name[dot:] if dot != -1 else ''
+            before_ext = base_name[0:dot] if dot != -1 else base_name
+            base_name = "%s-x%s" % (before_ext, ext)
             
-            #strip out any character not allowed
-            base_name = re.sub('[^\w\-\.]', '', base_name)
-            
-            #make sure that referenced texture files are unique
-            while base_name in image_names:
-                dot = base_name.rfind('.')
-                ext = base_name[dot:] if dot != -1 else ''
-                before_ext = base_name[0:dot] if dot != -1 else base_name
-                base_name = "%s-x%s" % (before_ext, ext)
-                
-            if base_name != orig_base_name:
-                subfile_data[base_name] = subfile_data[orig_base_name]
-                del subfile_data[orig_base_name]
-                image_objs[base_name] = image_objs[orig_base_name]
-                del image_objs[orig_base_name]
-            
-            img.path = "./%s" % base_name
-            img.save()
-            img_hex_key = hashlib.sha256(subfile_data[base_name]).hexdigest()
-            try: save_file_data(img_hex_key, subfile_data[base_name], "image/%s" % image_objs[base_name].format.lower())
-            except: raise DatabaseError()
-            img_path = "%s/%s/%s" % (path, current_prefix, base_name)
-            img_len = len(subfile_data[base_name])
-            try: img_version_num = get_new_version_from_path(img_path, file_type="image")
-            except cass.DatabaseError: raise DatabaseError()
-            try: save_file_name(img_path, img_version_num, img_hex_key, img_len)
-            except cass.DatabaseError: raise DatabaseError()
-            subfile_names.append("%s/%s" % (img_path, img_version_num))
+        if base_name != orig_base_name:
+            subfile_data[base_name] = subfile_data[orig_base_name]
+            del subfile_data[orig_base_name]
+            image_objs[base_name] = image_objs[orig_base_name]
+            del image_objs[orig_base_name]
+        
+        img.path = "./%s" % base_name
+        img.save()
+        img_hex_key = hashlib.sha256(subfile_data[base_name]).hexdigest()
+        try: save_file_data(img_hex_key, subfile_data[base_name], "image/%s" % image_objs[base_name].format.lower())
+        except: raise DatabaseError()
+        img_path = "%s/%s/%s" % (path, current_prefix, base_name)
+        img_len = len(subfile_data[base_name])
+        try: img_version_num = get_new_version_from_path(img_path, file_type="image")
+        except cass.DatabaseError: raise DatabaseError()
+        try: save_file_name(img_path, img_version_num, img_hex_key, img_len, ttl=ephemeral_ttl)
+        except cass.DatabaseError: raise DatabaseError()
+        subfile_names.append("%s/%s" % (img_path, img_version_num))
 
     str_buffer = StringIO()
     collada_obj.write(str_buffer)
