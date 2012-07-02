@@ -18,7 +18,7 @@ def do_update(full_path):
     try:
         model_data['metadata'] = get_file_metadata(full_path)
     except NotFoundError:
-        SOLR_CONNECTION.delete(id=path)
+        SOLR_CONNECTION.delete(id=full_path)
         return
     
     if model_data['metadata'].get('ephemeral', False):
