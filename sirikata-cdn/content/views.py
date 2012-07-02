@@ -538,7 +538,7 @@ def edit_file(request, filename):
     basepath = "/" + "/".join(split[:-1])
     version = split[-1:][0]
 
-    if file_username != request.user.get('username'):
+    if file_username != request.user.get('username') and not request.user.get('is_superuser', False):
         return HttpResponseForbidden()
 
     if request.method == 'POST':
@@ -704,7 +704,7 @@ def view(request, filename):
     file_username = split[0]
 
     view_params['can_change'] = False
-    if file_username == request.user.get('username'):
+    if file_username == request.user.get('username') or request.user.get('is_superuser', False):
         view_params['can_change'] = True
         
     view_params['can_clone'] = False
@@ -859,7 +859,7 @@ def download(request, hash, filename=None):
                     except ValueError: pass
         response = HttpResponse(data, mimetype=mime)
         if rangedresponse:
-            response['Content-Range'] = rangeheader
+            response['Content-Range'] = rangeheaderrequest.user['is_superuser']
             response['Accept-Ranges'] = 'bytes'
     response['Content-Length'] = str(len(data))
     response['Access-Control-Allow-Origin'] = '*'
