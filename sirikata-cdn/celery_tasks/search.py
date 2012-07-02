@@ -3,6 +3,7 @@ from celery.task import task, current
 from django.conf import settings
 from content.utils import get_model_data_from_path, get_file_metadata
 from content.utils import item_to_search_fields, get_content_by_date
+from cassandra_storage.cassandra_util import NotFoundError
 import pysolr
 import traceback
 
