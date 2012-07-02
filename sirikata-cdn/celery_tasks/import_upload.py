@@ -283,10 +283,13 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     try: save_file_data(zip_hex_key, zip_save_data, "application/zip")
     except: raise DatabaseError()
     
+    extra_metadata = {'ephemeral': ephemeral_ttl is not None}
+    
     try:
         save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),
                           subfile_names, zip_hex_key, "original", title,
-                          description, create_index=create_index, ttl=ephemeral_ttl)
+                          description, create_index=create_index, ttl=ephemeral_ttl,
+                          extra_metadata=extra_metadata)
     except cass.DatabaseError:
         raise DatabaseError()
 

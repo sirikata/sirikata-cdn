@@ -4,6 +4,7 @@ from django.conf import settings
 from content.utils import get_model_data_from_path, get_file_metadata
 from content.utils import item_to_search_fields, get_content_by_date
 import pysolr
+import traceback
 
 def do_update(full_path):
     SOLR_URL = getattr(settings, 'SOLR_WRITE_URL')
@@ -18,7 +19,10 @@ def do_update(full_path):
     except NotFoundError:
         SOLR_CONNECTION.delete(id=path)
         return
-        
+    
+    if model_data['metadata'].get('ephemeral', False):
+        return 1
+    
     model_data['timestamp'] = datetime.datetime.fromtimestamp(model_data['metadata']['timestamp'] / 1e6)
     to_insert = [item_to_search_fields(model_data)]
     SOLR_CONNECTION.add(to_insert)
@@ -29,6 +33,9 @@ def update_single_search_index_item(full_path):
     try:
         return do_update(full_path)
     except Exception, exc:
+        print 'Update search index got exception'
+        print exc
+        traceback.print_exc(exc)
         # exponential retry backoff, in seconds: 1, 2, 4, 16, 32, 64, 128
         current.retry(exc=exc, countdown=min(2 ** current.request.retries, 128))
 

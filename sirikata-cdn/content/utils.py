@@ -252,7 +252,8 @@ def save_file_name(path, version_num, hash_key, length, ttl=None):
     col_val = json.dumps(dict)
     insertRecord(NAMES, path, columns={version_num: col_val}, ttl=ttl)
 
-def save_version_type(path, version_num, hash_key, length, subfile_names, zip_key, type_id, title=None, description=None, create_index=True, ttl=None):
+def save_version_type(path, version_num, hash_key, length, subfile_names, zip_key, type_id,
+                      title=None, description=None, create_index=True, ttl=None, extra_metadata=None):
     try:
         rec = getRecord(NAMES, path, columns=[version_num])
         version_dict = json.loads(rec[version_num])
@@ -271,6 +272,11 @@ def save_version_type(path, version_num, hash_key, length, subfile_names, zip_ke
         version_dict['title'] = title
     if 'description' not in version_dict:
         version_dict['description'] = description
+
+    if extra_metadata is not None:
+        for key, val in extra_metadata.iteritems():
+            if key not in version_dict:
+                version_dict[key] = val
 
     version_dict['types'][type_id] = {'hash': hash_key,
                                       'size': length,
@@ -362,7 +368,7 @@ def copy_file(frompath, fromversion, topath, updated_metadata=None):
     
     return topath + '/' + new_file_version
     
-def add_base_metadata(path, version_num, metadata):    
+def add_base_metadata(path, version_num, metadata):
     rec = getRecord(NAMES, path, columns=[version_num])
     version_dict = json.loads(rec[version_num])
 
