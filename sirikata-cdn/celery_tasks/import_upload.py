@@ -193,7 +193,8 @@ def import_upload(main_rowkey, subfiles, selected_dae=None):
     return dae_zip_name
 
 @task
-def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None, create_index=True, ephemeral_ttl=None, ephemeral_subfiles=None):
+def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=None, extra_metadata=None,
+                    create_index=True, ephemeral_ttl=None, ephemeral_subfiles=None):
     import_upload.update_state(state="LOADING")
     file_data = get_temp_file(main_rowkey)
     (zip, dae_zip_name, dae_data) = get_file_or_zip(file_data, selected_dae)
@@ -283,7 +284,9 @@ def place_upload(main_rowkey, subfiles, title, path, description, selected_dae=N
     try: save_file_data(zip_hex_key, zip_save_data, "application/zip")
     except: raise DatabaseError()
     
-    extra_metadata = {'ephemeral': ephemeral_ttl is not None}
+    if extra_metadata is None:
+        extra_metadata = {}
+    extra_metadata['ephemeral'] = ephemeral_ttl is not None
     
     try:
         save_version_type(path, new_version_num, orig_hex_key, len(orig_save_data),

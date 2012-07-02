@@ -359,7 +359,8 @@ def upload_import(request, task_id):
             labels = [label.strip() for label in labels if len(label.strip()) > 0]
 
             task = place_upload.delay(upload_rec['main_rowkey'], upload_rec['subfiles'],
-                                      title, path, description, selected_dae=upload_rec['dae_choice'])
+                                      title, path, description, selected_dae=upload_rec['dae_choice'],
+                                      extra_metadata={'labels': labels})
 
             save_upload_task(username=request.session['username'],
                              task_id=task.task_id,
