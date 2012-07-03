@@ -859,7 +859,7 @@ def download(request, hash, filename=None):
                     except ValueError: pass
         response = HttpResponse(data, mimetype=mime)
         if rangedresponse:
-            response['Content-Range'] = rangeheaderrequest.user['is_superuser']
+            response['Content-Range'] = rangeheader
             response['Accept-Ranges'] = 'bytes'
     response['Content-Length'] = str(len(data))
     response['Access-Control-Allow-Origin'] = '*'
