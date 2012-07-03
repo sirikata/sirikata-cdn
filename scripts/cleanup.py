@@ -60,7 +60,8 @@ def save_unused_keys(unused_keys):
         try:
             key_data = get_hash(unused_key)
         except NotFoundError:
-            key_data = ""
+            continue
+        
         size_ct += len(key_data['data'])
         unused_key = unused_key.encode('ascii')
         mimetype = key_data['mimetype'].encode('ascii')
