@@ -36,7 +36,7 @@ def save_unused_keys(unused_keys):
     size_ct = 0
     db = bsddb.hashopen(TEMP_DATA_FILE, 'n')
     for unused_key in unused_keys:
-        key_data = cass.getRecord(TEMPFILES, unused_key)
+        key_data = cass.getRecord(TEMPFILES, unused_key, column_count=10000)
         size_ct += int(key_data['size'])
         db[unused_key] = marshal.dumps(dict(key_data))
     db.close()
