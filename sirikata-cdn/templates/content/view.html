@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load absurl %}
 
 {% block title %}{{ block.super }} | File View{% endblock title %}
 
@@ -102,7 +101,7 @@ You can pin sirikata to this latest version: <br/>
                 
                 <tr><td class="label">Mesh Size</td><td>{{ props.size|filesizeformat }}</td></tr>
                 <tr><td class="label">Sirikata URL</td><td><input class="clip_url" type="text" value="meerkat:///{{ basepath }}/{{ type_name }}/{{ version }}/{{ basename }}"></input></td></tr>
-                <tr><td class="label">Direct Download</td><td><input class="clip_url" type="text" value="{% absurl content.views.download_path basepath|add:'/'|add:type_name|add:'/'|add:version|add:'/'|add:basename %}"></input></td></tr>
+                <tr><td class="label">Direct Download</td><td><input class="clip_url" type="text" value="http://open3dhub.com{% url content.views.download_path basepath|add:'/'|add:type_name|add:'/'|add:version|add:'/'|add:basename %}"></input></td></tr>
                 
                 {% if props.metadata.zernike %}
                 <tr><td class="label">Zernike</td><td><input class="clip_url" type="text" value="{{ props.metadata.zernike }}"></input></td></tr>
