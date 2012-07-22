@@ -831,9 +831,6 @@ def search_json(request):
 
 @decorator_from_middleware(GZipMiddleware)
 def download_path(request, filename):
-    import sys
-    print >> sys.stderr, 'download_path', filename
-    
     parts = posixpath.normpath(filename).split("/")
     if len(parts) < 3:
         return HttpResponseBadRequest()
@@ -848,7 +845,6 @@ def download_path(request, filename):
         type_id = parts[-2]
         versions = get_versions('/' + base_path)
         if versions is None:
-            print >> sys.stderr, 'notfound1'
             return HttpResponseNotFound()
         version_num = str(max(map(int, versions)))
     else:
@@ -858,7 +854,6 @@ def download_path(request, filename):
     try: 
         file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
     except NotFoundError:
-        print >> sys.stderr, 'notfound2'
         return HttpResponseNotFound()
 
     if requested_file == posixpath.basename(base_path):
@@ -873,7 +868,6 @@ def download_path(request, filename):
             subfile_map[subfile_basename] = subfile
 
         if requested_file not in subfile_map:
-            print >> sys.stderr, 'notfound4'
             return HttpResponseNotFound()
 
         subfile_metadata = get_file_metadata(subfile_map[requested_file])
@@ -882,7 +876,6 @@ def download_path(request, filename):
     try:
         rec = get_hash(hash)
     except NotFoundError:
-        print >> sys.stderr, 'notfound5'
         return HttpResponseNotFound()
 
     data = rec['data']
