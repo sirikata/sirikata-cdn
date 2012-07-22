@@ -830,6 +830,67 @@ def search_json(request):
     return response
 
 @decorator_from_middleware(GZipMiddleware)
+def download_path(request, filename):
+    parts = posixpath.normpath(filename).split("/")
+    if len(parts) < 3:
+        return HttpResponseBadRequest()
+    
+    requested_file = parts[-1]
+
+    try: version_num = str(int(parts[-2]))
+    except ValueError: version_num = None
+    
+    if version_num is None:
+        base_path = "/".join(parts[:-2])
+        type_id = parts[-2]
+        versions = get_versions('/' + base_path)
+        if versions is None:
+            return HttpResponseNotFound()
+        version_num = str(max(map(int, versions)))
+    else:
+        base_path = "/".join(parts[:-3])
+        type_id = parts[-3]
+
+    try: 
+        file_metadata = get_file_metadata("/%s/%s" % (base_path, version_num))
+    except NotFoundError:
+        return HttpResponseNotFound()
+    
+    try: file_metadata = get_file_metadata("/%s" % filename)
+    except NotFoundError: return HttpResponseNotFound()
+
+
+    if requested_file == posixpath.basename(base_path):
+        is_mesh = True
+        hash = file_metadata['types'][type_id]['hash']
+    else:
+        is_mesh = False
+        subfile_map = {}
+        for subfile in file_metadata['types'][type_id]['subfiles']:
+            (subfile_base, vers) = posixpath.split(subfile)
+            subfile_basename = posixpath.basename(subfile_base)
+            subfile_map[subfile_basename] = subfile
+
+        if requested_file not in subfile_map:
+            return HttpResponseNotFound()
+
+        subfile_metadata = get_file_metadata(subfile_map[requested_file])
+        hash = subfile_metadata['hash']
+
+    try:
+        rec = get_hash(hash)
+    except NotFoundError:
+        return HttpResponseNotFound()
+
+    data = rec['data']
+    mime = rec['mimetype']
+
+    response = HttpResponse(data, mimetype=mime)
+    response['Content-Length'] = str(len(data))
+    response['Access-Control-Allow-Origin'] = '*'
+    return response
+
+@decorator_from_middleware(GZipMiddleware)
 def download(request, hash, filename=None):
     try: rec = get_hash(hash)
     except NotFoundError: return HttpResponseNotFound()
