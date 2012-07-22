@@ -860,13 +860,6 @@ def download_path(request, filename):
     except NotFoundError:
         print >> sys.stderr, 'notfound2'
         return HttpResponseNotFound()
-    
-    try:
-        file_metadata = get_file_metadata("/%s" % filename)
-    except NotFoundError:
-        print >> sys.stderr, 'notfound3'
-        return HttpResponseNotFound()
-
 
     if requested_file == posixpath.basename(base_path):
         is_mesh = True
