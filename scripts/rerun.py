@@ -132,6 +132,13 @@ def do_all(task, timestamp=None, modeltype=None):
                 if modeltype is None or modeltype == existing_type:
                     do_task(task, path, existing_type, timestamp, item['metadata'])
 
+def do_fromfile(task, infile, modeltype=None):
+    for line in infile:
+        line = line.strip()
+        if len(line) == 0:
+            continue
+        do_single(task, line, modeltype=modeltype)
+
 def main():
     global NUM_CONCURRENT_TASKS
     global FORCE_TASK
@@ -141,14 +148,21 @@ def main():
     parser.add_argument('--force', help='Force task to execute, even if it has already been performed', action='store_true')
     parser.add_argument('task', help='task to execute', choices=tasks.keys())
     subparsers = parser.add_subparsers()
+    
     optall = subparsers.add_parser('all', help='reprocess all')
-    optall.add_argument('--type', help='only reprocess this type of all files')
+    optall.add_argument('--type', dest='modeltype', help='only reprocess this type of all files')
     optall.add_argument('--timestamp', help='start at this timestamp')
     optall.set_defaults(func=do_all)
+    
     single = subparsers.add_parser('single', help='reprocess a single file')
     single.set_defaults(func=do_single)
     single.add_argument('path')
-    single.add_argument('--type', help='only reprocess this type of the file')
+    single.add_argument('--type', dest='modeltype', help='only reprocess this type of the file')
+    
+    fromfile = subparsers.add_parser('fromfile', help='reprocess models listed in given file (one per line)')
+    fromfile.add_argument('infile', type=argparse.FileType('r'), help='Path to the file')
+    fromfile.add_argument('--type', dest='modeltype', help='only reprocess this type of all files')
+    fromfile.set_defaults(func=do_fromfile)
     
     args = parser.parse_args()
     
