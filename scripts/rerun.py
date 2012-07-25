@@ -4,44 +4,43 @@ import os.path
 import time
 from celery.execute import send_task
 import argparse
-import traceback
 
-def detect_screenshot(type, metadata):
-    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+def detect_screenshot(modeltype, metadata):
+    if metadata is None or 'types' not in metadata or modeltype not in metadata['types']:
         return False
-    if 'screenshot' in metadata['types'][type]:
+    if 'screenshot' in metadata['types'][modeltype]:
         return True
     return False
 
-def detect_optimized(type, metadata):
-    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+def detect_optimized(modeltype, metadata):
+    if metadata is None or 'types' not in metadata or modeltype not in metadata['types']:
         return False
     if 'optimized' in metadata['types']:
         return True
     return False
 
-def detect_metadata(type, metadata):
-    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+def detect_metadata(modeltype, metadata):
+    if metadata is None or 'types' not in metadata or modeltype not in metadata['types']:
         return False
-    if 'metadata' in metadata['types'][type]:
+    if 'metadata' in metadata['types'][modeltype]:
         return True
     return False
 
-def detect_progressive(type, metadata):
-    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+def detect_progressive(modeltype, metadata):
+    if metadata is None or 'types' not in metadata or modeltype not in metadata['types']:
         return False
     if 'progressive' in metadata['types']:
         return True
     return False
 
-def detect_panda3d(type, metadata):
-    if metadata is None or 'types' not in metadata or type not in metadata['types']:
+def detect_panda3d(modeltype, metadata):
+    if metadata is None or 'types' not in metadata or modeltype not in metadata['types']:
         return False
-    if type not in metadata['types']:
+    if modeltype not in metadata['types']:
         return False
-    if 'panda3d_base_bam' in metadata['types'][type] and \
-       'panda3d_full_bam' in metadata['types'][type] or \
-       'panda3d_bam' in metadata['types'][type]:
+    if 'panda3d_base_bam' in metadata['types'][modeltype] and \
+       'panda3d_full_bam' in metadata['types'][modeltype] or \
+       'panda3d_bam' in metadata['types'][modeltype]:
         return True
     return False
 
@@ -95,31 +94,31 @@ def wait_all():
         emit_finished_tasks()
         time.sleep(1)
 
-def do_task(taskname, path, type, timestamp=None, metadata=None):
+def do_task(taskname, path, modeltype, timestamp=None, metadata=None):
     if not FORCE_TASK and metadata is not None:
         detect_func = tasks[taskname]['detect_func']
-        if detect_func(type, metadata):
+        if detect_func(modeltype, metadata):
             return
     
-    task_string = '%s task for %s type=%s timestamp=%s' % (taskname, path, type, str(timestamp))
+    task_string = '%s task for %s type=%s timestamp=%s' % (taskname, path, modeltype, str(timestamp))
     print 'Issuing', task_string
-    t = send_task(tasks[taskname]['task_name'], args=[path, type])
+    t = send_task(tasks[taskname]['task_name'], args=[path, modeltype])
     running_tasks.append((t, task_string))
     wait_if_needed()
 
-def do_single(task, path, type=None):
+def do_single(task, path, modeltype=None):
     metadata = get_file_metadata(path)
-    if type is None:
+    if modeltype is None:
         for t in metadata['types']:
             do_task(task, path, t, metadata=metadata)
     else:
-        if type not in metadata['types']:
-            print >> sys.stderr, 'Invalid type', type, 'for path', path
+        if modeltype not in metadata['types']:
+            print >> sys.stderr, 'Invalid type', modeltype, 'for path', path
             return
-        do_task(task, path, type, metadata=metadata)
+        do_task(task, path, modeltype, metadata=metadata)
         
 
-def do_all(task, timestamp=None, type=None):
+def do_all(task, timestamp=None, modeltype=None):
     next_start = ""
     if timestamp is not None:
         next_start = timestamp
@@ -130,7 +129,7 @@ def do_all(task, timestamp=None, type=None):
             path = item['full_path']
             timestamp = item['full_timestamp']
             for existing_type in item['metadata']['types'].iterkeys():
-                if type is None or type == existing_type:
+                if modeltype is None or modeltype == existing_type:
                     do_task(task, path, existing_type, timestamp, item['metadata'])
 
 def main():
@@ -142,10 +141,10 @@ def main():
     parser.add_argument('--force', help='Force task to execute, even if it has already been performed', action='store_true')
     parser.add_argument('task', help='task to execute', choices=tasks.keys())
     subparsers = parser.add_subparsers()
-    all = subparsers.add_parser('all', help='reprocess all')
-    all.add_argument('--type', help='only reprocess this type of all files')
-    all.add_argument('--timestamp', help='start at this timestamp')
-    all.set_defaults(func=do_all)
+    optall = subparsers.add_parser('all', help='reprocess all')
+    optall.add_argument('--type', help='only reprocess this type of all files')
+    optall.add_argument('--timestamp', help='start at this timestamp')
+    optall.set_defaults(func=do_all)
     single = subparsers.add_parser('single', help='reprocess a single file')
     single.set_defaults(func=do_single)
     single.add_argument('path')
