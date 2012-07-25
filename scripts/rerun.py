@@ -85,13 +85,23 @@ def emit_finished_tasks():
     running_tasks = tokeep
 
 def wait_if_needed():
+    updated = False
     while len(running_tasks) >= NUM_CONCURRENT_TASKS:
+        if not updated:
+            print 'Currently waiting on:'
+            print '\n'.join('\t%s' % task_string for t,task_string in running_tasks)
+            updated = True
         emit_finished_tasks()
         time.sleep(1)
         
 def wait_all():
     while len(running_tasks) > 0:
+        before = len(running_tasks)
         emit_finished_tasks()
+        after = len(running_tasks)
+        if after < before and after > 0:
+            print 'Currently waiting on:'
+            print '\n'.join('\t%s' % task_string for t,task_string in running_tasks)
         time.sleep(1)
 
 def do_task(taskname, path, modeltype, timestamp=None, metadata=None):
