@@ -611,7 +611,7 @@ def delete_file(request, filename):
     basepath = "/" + "/".join(split[:-1])
     version = split[-1:][0]
 
-    if file_username != request.user.get('username'):
+    if file_username != request.user.get('username') and not request.user.get('is_superuser', False):
         return HttpResponseForbidden()
 
     delete_file_metadata(basepath, version)
