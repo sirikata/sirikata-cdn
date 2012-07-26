@@ -60,19 +60,40 @@ tasks = {'screenshot' :
             {'task_name': 'celery_tasks.generate_panda3d.generate_panda3d',
              'detect_func': detect_panda3d}}
 
+class TaskInfo(object):
+    def __init__(self, taskname, path, modeltype, timestamp):
+        self.taskname = taskname
+        self.path = path
+        self.modeltype = modeltype
+        self.timestamp = timestamp
+    
+    def __str__(self):
+        return '%s task for %s type=%s timestamp=%s' % (self.taskname,
+                                                        self.path,
+                                                        self.modeltype,
+                                                        self.timestamp)
+    def __repr__(self):
+        return str(self)
+
 running_tasks = []
 NUM_CONCURRENT_TASKS = None
 FORCE_TASK = False
+SAVE_SUCCESS = None
+SAVE_FAILURE = None
 
 def emit_finished_tasks():
     global running_tasks
     
     tokeep = []
-    for (t, task_string) in running_tasks:
+    for (t, task_info) in running_tasks:
         if t.state == 'SUCCESS' or t.state == 'FAILURE':
-            print 'Completed', task_string,
+            print 'Completed', task_info,
             print t.state
+            if t.state == 'SUCCESS' and SAVE_SUCCESS is not None:
+                SAVE_SUCCESS.write(task_info.path + "\n")
             if t.state == 'FAILURE':
+                if SAVE_FAILURE is not None:
+                    SAVE_FAILURE.write(task_info.path + "\n")
                 print 'Printing failure result:'
                 print
                 print 'Failure type:', type(t.result)
@@ -80,7 +101,7 @@ def emit_finished_tasks():
                 print 'Traceback:', t.traceback
                 print
         else:
-            tokeep.append((t,task_string))
+            tokeep.append((t,task_info))
     
     running_tasks = tokeep
 
@@ -89,7 +110,7 @@ def wait_if_needed():
     while len(running_tasks) >= NUM_CONCURRENT_TASKS:
         if not updated:
             print 'Currently waiting on:'
-            print '\n'.join('\t%s' % task_string for t,task_string in running_tasks)
+            print '\n'.join('\t%s' % task_info for t,task_info in running_tasks)
             updated = True
         emit_finished_tasks()
         time.sleep(1)
@@ -101,7 +122,7 @@ def wait_all():
         after = len(running_tasks)
         if after < before and after > 0:
             print 'Currently waiting on:'
-            print '\n'.join('\t%s' % task_string for t,task_string in running_tasks)
+            print '\n'.join('\t%s' % task_info for t,task_info in running_tasks)
         time.sleep(1)
 
 def do_task(taskname, path, modeltype, timestamp=None, metadata=None):
@@ -110,10 +131,10 @@ def do_task(taskname, path, modeltype, timestamp=None, metadata=None):
         if detect_func(modeltype, metadata):
             return
     
-    task_string = '%s task for %s type=%s timestamp=%s' % (taskname, path, modeltype, str(timestamp))
-    print 'Issuing', task_string
+    task_info = TaskInfo(taskname, path, modeltype, str(timestamp))
+    print 'Issuing', task_info
     t = send_task(tasks[taskname]['task_name'], args=[path, modeltype])
-    running_tasks.append((t, task_string))
+    running_tasks.append((t, task_info))
     wait_if_needed()
 
 def do_single(task, path, modeltype=None):
@@ -152,10 +173,14 @@ def do_fromfile(task, infile, modeltype=None):
 def main():
     global NUM_CONCURRENT_TASKS
     global FORCE_TASK
+    global SAVE_SUCCESS
+    global SAVE_FAILURE
     
     parser = argparse.ArgumentParser(description='Reprocess tasks')
     parser.add_argument('--concurrency', help='number of concurrent outstanding tasks', default=1, type=int)
     parser.add_argument('--force', help='Force task to execute, even if it has already been performed', action='store_true')
+    parser.add_argument('--save-success', help='Write the list of successful meshes to file', type=argparse.FileType('w'))
+    parser.add_argument('--save-failure', help='Write the list of failed meshes to file', type=argparse.FileType('w'))
     parser.add_argument('task', help='task to execute', choices=tasks.keys())
     subparsers = parser.add_subparsers()
     
@@ -178,11 +203,15 @@ def main():
     
     NUM_CONCURRENT_TASKS = args.concurrency
     FORCE_TASK = args.force
+    SAVE_SUCCESS = args.save_success
+    SAVE_FAILURE = args.save_failure
     
     parsing_result = vars(args)
     to_execute = parsing_result['func']
     del parsing_result['func']
     del parsing_result['concurrency']
+    del parsing_result['save_success']
+    del parsing_result['save_failure']
     del parsing_result['force']
     to_execute(**parsing_result)
     
