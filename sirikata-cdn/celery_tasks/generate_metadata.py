@@ -12,6 +12,7 @@ import os.path
 import posixpath
 import tempfile
 import subprocess
+from gzip import GzipFile
 
 try:
     subprocess.check_output
@@ -37,8 +38,16 @@ except AttributeError:
         return output
     subprocess.check_output = _check_output
 
+def get_gzip_size(data):
+    zbuf = StringIO()
+    zfile = GzipFile(mode='wb', compresslevel=6, fileobj=zbuf)
+    zfile.write(data)
+    zfile.close()
+    return len(zbuf.getvalue())
+
 @task
 def generate_metadata(filename, typeid):
+    
     metadata = get_file_metadata(filename)
     hash = metadata['types'][typeid]['hash']
     subfiles = metadata['types'][typeid]['subfiles']
@@ -83,4 +92,17 @@ def generate_metadata(filename, typeid):
     split = filename.split("/")
     version = split[-1:][0]
     file_key = "/".join(split[:-1])
-    add_metadata(file_key, version, typeid, { 'metadata': metadata_info })
+    added_metadata = { 'metadata': metadata_info }
+    
+    # the size of the mesh, gzipped
+    added_metadata['size_gzip'] = get_gzip_size(dae_data)
+    
+    # the size of the progressive stream, if exists
+    stream_hash = metadata['types'][typeid].get('progressive_stream', None)
+    if stream_hash is not None:
+        stream_data = get_hash(stream_hash)['data']
+        added_metadata['progressive_stream_size'] = len(stream_data)
+        added_metadata['progressive_stream_size_gzip'] = get_gzip_size(stream_data)
+    
+    
+    add_metadata(file_key, version, typeid, added_metadata)
