@@ -80,6 +80,8 @@ NUM_CONCURRENT_TASKS = None
 FORCE_TASK = False
 SAVE_SUCCESS = None
 SAVE_FAILURE = None
+EXCLUDE_EXACT = set()
+EXCLUDE_IN = set()
 
 def emit_finished_tasks():
     global running_tasks
@@ -126,6 +128,12 @@ def wait_all():
         time.sleep(1)
 
 def do_task(taskname, path, modeltype, timestamp=None, metadata=None):
+    if path in EXCLUDE_EXACT:
+        return
+    for e in EXCLUDE_IN:
+        if e in path:
+            return
+    
     if not FORCE_TASK and metadata is not None:
         detect_func = tasks[taskname]['detect_func']
         if detect_func(modeltype, metadata):
@@ -175,12 +183,16 @@ def main():
     global FORCE_TASK
     global SAVE_SUCCESS
     global SAVE_FAILURE
+    global EXCLUDE_EXACT
+    global EXCLUDE_IN
     
     parser = argparse.ArgumentParser(description='Reprocess tasks')
     parser.add_argument('--concurrency', help='number of concurrent outstanding tasks', default=1, type=int)
     parser.add_argument('--force', help='Force task to execute, even if it has already been performed', action='store_true')
     parser.add_argument('--save-success', help='Write the list of successful meshes to file', type=argparse.FileType('w'))
     parser.add_argument('--save-failure', help='Write the list of failed meshes to file', type=argparse.FileType('w'))
+    parser.add_argument('--exclude-exact', type=argparse.FileType('r'), help='List of exact mesh paths to exclude, one per line')
+    parser.add_argument('--exclude-in', type=argparse.FileType('r'), help='List of strings that will exclude a mesh if the string is contained in its path')
     parser.add_argument('task', help='task to execute', choices=tasks.keys())
     subparsers = parser.add_subparsers()
     
@@ -206,12 +218,22 @@ def main():
     SAVE_SUCCESS = args.save_success
     SAVE_FAILURE = args.save_failure
     
+    if args.exclude_exact is not None:
+        lines = [line.strip() for line in args.exclude_exact.read().split()]
+        EXCLUDE_EXACT = set([line for line in lines if len(line) > 0]) 
+    
+    if args.exclude_in is not None:
+        lines = [line.strip() for line in args.exclude_in.read().split()]
+        EXCLUDE_IN = set([line for line in lines if len(line) > 0]) 
+    
     parsing_result = vars(args)
     to_execute = parsing_result['func']
     del parsing_result['func']
     del parsing_result['concurrency']
     del parsing_result['save_success']
     del parsing_result['save_failure']
+    del parsing_result['exclude_exact']
+    del parsing_result['exclude_in']
     del parsing_result['force']
     to_execute(**parsing_result)
     
