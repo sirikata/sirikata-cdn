@@ -22,6 +22,8 @@ def detect_optimized(modeltype, metadata):
 def detect_metadata(modeltype, metadata):
     if metadata is None or 'types' not in metadata or modeltype not in metadata['types']:
         return False
+    if 'subfile_sizes_gzip' not in metadata['types'][modeltype]:
+        return False
     if 'metadata' in metadata['types'][modeltype]:
         return True
     return False

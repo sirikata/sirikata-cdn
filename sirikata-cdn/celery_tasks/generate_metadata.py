@@ -55,10 +55,14 @@ def generate_metadata(filename, typeid):
     dae_data = get_hash(hash)['data']
 
     subfile_map = {}
+    subfile_sizes = {}
+    subfile_sizes_gzip = {}
     for subfile in subfiles:
         img_meta = get_file_metadata(subfile)
         img_hash = img_meta['hash']
         img_data = get_hash(img_hash)['data']
+        subfile_sizes[subfile] = len(img_data)
+        subfile_sizes_gzip[subfile] = get_gzip_size(img_data)
         base_name = os.path.basename(os.path.split(subfile)[0])
         subfile_map[base_name] = img_data
     
@@ -96,6 +100,11 @@ def generate_metadata(filename, typeid):
     
     # the size of the mesh, gzipped
     added_metadata['size_gzip'] = get_gzip_size(dae_data)
+    
+    # the size of each subfile
+    added_metadata['subfile_sizes'] = subfile_sizes
+    # the size of each subfile, gzipped
+    added_metadata['subfile_sizes_gzip'] = subfile_sizes_gzip
     
     # the size of the progressive stream, if exists
     stream_hash = metadata['types'][typeid].get('progressive_stream', None)
