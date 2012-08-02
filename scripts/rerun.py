@@ -28,6 +28,13 @@ def detect_metadata(modeltype, metadata):
         return True
     return False
 
+def detect_progressive_errors(modeltype, metadata):
+    if metadata is None or 'types' not in metadata or modeltype not in metadata['types']:
+        return False
+    if 'progressive_perceptual_error' not in metadata['types'][modeltype]:
+        return False
+    return True
+
 def detect_progressive(modeltype, metadata):
     if metadata is None or 'types' not in metadata or modeltype not in metadata['types']:
         return False
@@ -55,6 +62,9 @@ tasks = {'screenshot' :
          'generate_metadata' :
             {'task_name': 'celery_tasks.generate_metadata.generate_metadata',
              'detect_func': detect_metadata},
+         'generate_progressive_errors' :
+            {'task_name': 'celery_tasks.generate_progressive_errors.generate_progressive_errors',
+             'detect_func': detect_progressive_errors},
          'generate_progressive' :
             {'task_name': 'celery_tasks.generate_progressive.generate_progressive',
              'detect_func': detect_progressive},
