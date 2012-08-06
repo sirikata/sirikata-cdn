@@ -1,6 +1,7 @@
 from celery.task import task
 import os
 import sys
+import traceback
 import collada
 import cassandra_storage.cassandra_util as cass
 from StringIO import StringIO
@@ -13,6 +14,7 @@ import multiprocessing
 
 def get_progressive_errors(dae_data, pm_data, mipmap_tar_data):
     from meshtool.filters.print_filters.print_pm_perceptual_error import getPmPerceptualError
+    raise Exception("omg")
     
     mesh = collada.Collada(StringIO(dae_data))
     pm_filebuf = StringIO(pm_data) if pm_data is not None else None
@@ -25,9 +27,10 @@ def get_progressive_errors(dae_data, pm_data, mipmap_tar_data):
 def _get_progressive_errors(queue, dae_data, pm_data, mipmap_tar_data):
     try:
         error_data = get_progressive_errors(dae_data, pm_data, mipmap_tar_data)
-        queue.put(error_data)
+        queue.put((True, error_data))
     except:
-        queue.put(None)
+        except_type, except_class, tb = sys.exc_info()
+        queue.put((False, (except_type, except_class, traceback.extract_tb(tb))))
 
 @task
 def generate_progressive_errors(filename, typeid):
@@ -54,9 +57,13 @@ def generate_progressive_errors(filename, typeid):
     multiprocessing.current_process()._daemonic = False
     p = multiprocessing.Process(target=_get_progressive_errors, args=[q, dae_data, pm_data, mipmap_tar_data])
     p.start()
-    error_data = q.get()
+    success, error_data = q.get()
     p.join()
     multiprocessing.current_process()._daemonic = daemonic
+    
+    if not success:
+        print 'Exception from worker, %s' % str(error_data)
+        raise Exception("got exception from worker: %s" % str(error_data))
     
     if error_data is None:
         return
