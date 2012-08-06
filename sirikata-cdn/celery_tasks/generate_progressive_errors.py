@@ -14,7 +14,6 @@ import multiprocessing
 
 def get_progressive_errors(dae_data, pm_data, mipmap_tar_data):
     from meshtool.filters.print_filters.print_pm_perceptual_error import getPmPerceptualError
-    raise Exception("omg")
     
     mesh = collada.Collada(StringIO(dae_data))
     pm_filebuf = StringIO(pm_data) if pm_data is not None else None
