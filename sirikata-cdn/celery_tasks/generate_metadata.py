@@ -79,6 +79,7 @@ def generate_metadata(filename, typeid):
     metadata_info['texture_ram_usage'] = json_data['texture_ram']
     metadata_info['num_draw_calls'] = json_data['num_draw_with_batching']
     metadata_info['num_vertices'] = json_data['num_vertices']
+    metadata_info['bounds_info'] = json_data['bounds_info']
 
     triangulate = meshtool.filters.factory.getInstance('triangulate')
     mesh = triangulate.apply(mesh)
