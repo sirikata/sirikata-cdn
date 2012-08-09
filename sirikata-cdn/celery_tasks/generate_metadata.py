@@ -6,6 +6,7 @@ import cassandra_storage.cassandra_util as cass
 from StringIO import StringIO
 from content.utils import get_file_metadata, get_hash, save_file_data, add_metadata
 from meshtool.filters.print_filters.print_json import getJSON
+from meshtool.filters.simplify_filters.add_back_pm import add_back_pm
 import meshtool.filters
 import json
 import os.path
@@ -70,6 +71,14 @@ def generate_metadata(filename, typeid):
         return subfile_map[posixpath.basename(filename)]
     
     mesh = collada.Collada(StringIO(dae_data), aux_file_loader=customImageLoader)
+    
+    stream_hash = metadata['types'][typeid].get('progressive_stream', None)
+    stream_data = get_hash(stream_hash)['data'] if stream_hash is not None else None
+    
+    if stream_data is not None:
+        # add back the progressive stream so we get accurate metadata
+        mesh = add_back_pm(mesh, StringIO(stream_data), 100)
+    
     json_data = json.loads(getJSON(mesh))
 
     metadata_info = {}
@@ -107,10 +116,8 @@ def generate_metadata(filename, typeid):
     # the size of each subfile, gzipped
     added_metadata['subfile_sizes_gzip'] = subfile_sizes_gzip
     
-    # the size of the progressive stream, if exists
-    stream_hash = metadata['types'][typeid].get('progressive_stream', None)
-    if stream_hash is not None:
-        stream_data = get_hash(stream_hash)['data']
+    if stream_data is not None:
+        # the size of the progressive stream, if exists
         added_metadata['progressive_stream_size'] = len(stream_data)
         added_metadata['progressive_stream_size_gzip'] = get_gzip_size(stream_data)
     
