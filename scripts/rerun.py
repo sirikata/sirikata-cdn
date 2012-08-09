@@ -24,9 +24,12 @@ def detect_metadata(modeltype, metadata):
         return False
     if 'subfile_sizes_gzip' not in metadata['types'][modeltype]:
         return False
-    if 'metadata' in metadata['types'][modeltype]:
-        return True
-    return False
+    if 'metadata' not in metadata['types'][modeltype]:
+        return False
+    meta = metadata['types'][modeltype]['metadata']
+    if 'bounds_info' not in meta:
+        return False
+    return True
 
 def detect_progressive_errors(modeltype, metadata):
     if metadata is None or 'types' not in metadata or modeltype not in metadata['types']:
