@@ -891,14 +891,18 @@ def download(request, hash, filename=None):
     try: rec = get_hash(hash)
     except NotFoundError: return HttpResponseNotFound()
     except: return HttpResponseServerError()
+    
     data = rec['data']
     mime = rec['mimetype']
+    
     if request.method == 'HEAD':
         response = HttpResponse(mimetype=mime)
     else:
         rangedresponse = False
-        if 'HTTP_RANGE' in request.META:
-            range = request.META['HTTP_RANGE']
+        if 'HTTP_RANGE' in request.META or ('start' in request.GET and 'end' in request.GET):
+            range = request.META.get('HTTP_RANGE', None)
+            if range is None:
+                range = "bytes=%s-%s" % (request.GET['start'], request.GET['end'])
             parts = range.split('=')
             if len(parts) == 2:
                 parts = parts[1].split('-')
@@ -918,6 +922,7 @@ def download(request, hash, filename=None):
         if rangedresponse:
             response['Content-Range'] = rangeheader
             response['Accept-Ranges'] = 'bytes'
+    
     response['Content-Length'] = str(len(data))
     response['Access-Control-Allow-Origin'] = '*'
     response['Access-Control-Allow-Headers'] = 'Range'
